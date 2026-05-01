@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제주 비례대표 계산기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
+        body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.03em; }
+        input[type="number"]::-webkit-inner-spin-button { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-6">
+
+<div class="w-full max-w-2xl bg-white border border-gray-200 rounded-3xl shadow-sm flex overflow-hidden">
+    
+    <!-- 왼쪽: 입력 영역 -->
+    <div class="flex-[1.4] p-10 border-r border-gray-100">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-xs font-bold text-gray-400 tracking-widest">득표율 입력</h1>
+            <button onclick="resetAll()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition-colors underline">초기화</button>
+        </div>
+        
+        <div class="space-y-12">
+            <!-- 더불어민주당 -->
+            <div>
+                <div class="flex items-end border-b-2 border-gray-900 pb-2 focus-within:border-blue-500 transition-colors">
+                    <span class="text-lg font-bold text-gray-800 w-full">더불어민주당</span>
+                    <input type="number" id="vote1" oninput="updateAll()" class="bg-transparent text-right text-2xl font-black outline-none w-20" placeholder="0">
+                    <span class="text-sm font-bold text-gray-300 ml-1">%</span>
+                </div>
+            </div>
+
+            <!-- 국민의힘 -->
+            <div>
+                <div class="flex items-end border-b-2 border-gray-900 pb-2 focus-within:border-red-500 transition-colors">
+                    <span class="text-lg font-bold text-gray-800 w-full">국민의힘</span>
+                    <input type="number" id="vote2" oninput="updateAll()" class="bg-transparent text-right text-2xl font-black outline-none w-20" placeholder="0">
+                    <span class="text-sm font-bold text-gray-300 ml-1">%</span>
+                </div>
+            </div>
+
+            <!-- 소수정당 및 기타 -->
+            <div>
+                <div class="flex items-end border-b-2 border-gray-900 pb-2 focus-within:border-amber-500 transition-colors">
+                    <span class="text-lg font-bold text-gray-800 w-full">소수정당 및 기타</span>
+                    <input type="number" id="vote3" oninput="updateAll()" class="bg-transparent text-right text-2xl font-black outline-none w-20" placeholder="0">
+                    <span class="text-sm font-bold text-gray-300 ml-1">%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 오른쪽: 상태창 -->
+    <div class="flex-1 bg-gray-50 p-10 flex flex-col justify-between">
+        <div>
+            <h2 class="text-xs font-bold text-gray-400 mb-1">남은 비율</h2>
+            <div class="flex items-baseline mb-8">
+                <span id="remain-percent" class="text-5xl font-black text-gray-900">100</span>
+                <span class="text-lg font-bold text-gray-400 ml-1">%</span>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <h2 class="text-xs font-bold text-gray-400 mb-1">현재 합계</h2>
+                    <div class="flex items-baseline">
+                        <span id="total-percent" class="text-2xl font-bold text-gray-900">0</span>
+                        <span class="text-sm font-bold text-gray-300 ml-1">%</span>
+                    </div>
+                </div>
+                <p id="status-text" class="text-[11px] font-bold text-gray-400 italic">숫자를 입력하면 남은 값이 계산됩니다.</p>
+            </div>
+        </div>
+
+        <div id="result-display" class="hidden my-4 space-y-2 border-t border-gray-200 pt-4"></div>
+
+        <button id="calc-btn" onclick="calculate()" class="w-full bg-gray-900 text-white text-sm font-bold py-5 rounded-2xl hover:bg-black active:scale-95 transition-all disabled:bg-gray-200 disabled:text-gray-400">
+            의석수 계산하기
+        </button>
+    </div>
+</div>
+
+<script>
+    function updateAll() {
+        const v1 = parseFloat(document.getElementById('vote1').value) || 0;
+        const v2 = parseFloat(document.getElementById('vote2').value) || 0;
+        const v3 = parseFloat(document.getElementById('vote3').value) || 0;
+        
+        const sum = v1 + v2 + v3;
+        let remain = 100 - sum;
+        
+        // 음수 처리 (100% 넘었을 때)
+        if (remain < 0) remain = 0;
+
+        // UI 업데이트
+        document.getElementById('remain-percent').innerText = remain.toFixed(1).replace(/\.0$/, '');
+        document.getElementById('total-percent').innerText = sum.toFixed(1).replace(/\.0$/, '');
+
+        const statusText = document.getElementById('status-text');
+        const remainDisplay = document.getElementById('remain-percent');
+        const btn = document.getElementById('calc-btn');
+
+        if (sum > 100.1) {
+            remainDisplay.classList.add('text-red-500');
+            statusText.innerText = "100%를 초과했습니다";
+            statusText.classList.replace('text-gray-400', 'text-red-500');
+            btn.disabled = true;
+        } else {
+            remainDisplay.classList.remove('text-red-500');
+            statusText.innerText = sum >= 99.9 ? "정상 입력됨" : "남은 비율을 채워주세요";
+            statusText.classList.replace('text-red-500', 'text-gray-400');
+            btn.disabled = false;
+        }
+    }
+
+    function calculate() {
+        const TOTAL_SEATS = 13;
+        const data = [
+            { name: '민주당', votes: parseFloat(document.getElementById('vote1').value) || 0 },
+            { name: '국민의힘', votes: parseFloat(document.getElementById('vote2').value) || 0 },
+            { name: '소수/기타', votes: parseFloat(document.getElementById('vote3').value) || 0 }
+        ];
+
+        let eligible = data.filter(p => p.votes >= 5);
+        if (eligible.length === 0) {
+            alert("5% 이상 득표한 정당이 없습니다.");
+            return;
+        }
+
+        const totalEligibleVotes = eligible.reduce((sum, p) => sum + p.votes, 0);
+        let allocated = 0;
+        eligible = eligible.map(p => {
+            const exact = (p.votes / totalEligibleVotes) * TOTAL_SEATS;
+            const seats = Math.floor(Number(exact.toFixed(10)));
+            allocated += seats;
+            return { ...p, seats: seats, remainder: exact - seats };
+        });
+
+        let remainSeats = TOTAL_SEATS - allocated;
+        eligible.sort((a, b) => parseFloat(b.remainder.toFixed(10)) - parseFloat(a.remainder.toFixed(10)));
+        for (let i = 0; i < remainSeats; i++) { if (eligible[i]) eligible[i].seats += 1; }
+
+        const resBox = document.getElementById('result-display');
+        resBox.innerHTML = '<p class="text-[10px] font-bold text-gray-400 mb-2">시뮬레이션 결과</p>';
+        resBox.classList.remove('hidden');
+        
+        eligible.sort((a,b)=>b.seats - a.seats).forEach(p => {
+            resBox.innerHTML += `
+                <div class="flex justify-between items-center text-sm font-bold mb-1">
+                    <span>${p.name}</span>
+                    <span class="text-blue-600">${p.seats}석</span>
+                </div>
+            `;
+        });
+    }
+
+    function resetAll() {
+        document.getElementById('vote1').value = '';
+        document.getElementById('vote2').value = '';
+        document.getElementById('vote3').value = '';
+        updateAll();
+        document.getElementById('result-display').classList.add('hidden');
+    }
+</script>
+
+</body>
+</html>
