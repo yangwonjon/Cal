@@ -6,7 +6,7 @@
     <title>제주 비례대표 계산기</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght=400;700;900&display=swap');
         body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.03em; }
         input[type="number"]::-webkit-inner-spin-button { display: none; }
     </style>
@@ -41,11 +41,29 @@
                 </div>
             </div>
 
+            <!-- 조국혁신당 -->
+            <div>
+                <div class="flex items-end border-b-2 border-gray-900 pb-2 focus-within:border-blue-400 transition-colors">
+                    <span class="text-lg font-bold text-gray-800 w-full">조국혁신당</span>
+                    <input type="number" id="vote3" oninput="updateAll()" class="bg-transparent text-right text-2xl font-black outline-none w-20" placeholder="0">
+                    <span class="text-sm font-bold text-gray-300 ml-1">%</span>
+                </div>
+            </div>
+
+            <!-- 개혁신당 -->
+            <div>
+                <div class="flex items-end border-b-2 border-gray-900 pb-2 focus-within:border-orange-500 transition-colors">
+                    <span class="text-lg font-bold text-gray-800 w-full">개혁신당</span>
+                    <input type="number" id="vote4" oninput="updateAll()" class="bg-transparent text-right text-2xl font-black outline-none w-20" placeholder="0">
+                    <span class="text-sm font-bold text-gray-300 ml-1">%</span>
+                </div>
+            </div>
+
             <!-- 소수정당 및 기타 -->
             <div>
                 <div class="flex items-end border-b-2 border-gray-900 pb-2 focus-within:border-amber-500 transition-colors">
                     <span class="text-lg font-bold text-gray-800 w-full">소수정당 및 기타</span>
-                    <input type="number" id="vote3" oninput="updateAll()" class="bg-transparent text-right text-2xl font-black outline-none w-20" placeholder="0">
+                    <input type="number" id="vote5" oninput="updateAll()" class="bg-transparent text-right text-2xl font-black outline-none w-20" placeholder="0">
                     <span class="text-sm font-bold text-gray-300 ml-1">%</span>
                 </div>
             </div>
@@ -86,14 +104,14 @@
         const v1 = parseFloat(document.getElementById('vote1').value) || 0;
         const v2 = parseFloat(document.getElementById('vote2').value) || 0;
         const v3 = parseFloat(document.getElementById('vote3').value) || 0;
+        const v4 = parseFloat(document.getElementById('vote4').value) || 0;
+        const v5 = parseFloat(document.getElementById('vote5').value) || 0;
         
-        const sum = v1 + v2 + v3;
+        const sum = v1 + v2 + v3 + v4 + v5;
         let remain = 100 - sum;
         
-        // 음수 처리 (100% 넘었을 때)
         if (remain < 0) remain = 0;
 
-        // UI 업데이트
         document.getElementById('remain-percent').innerText = remain.toFixed(1).replace(/\.0$/, '');
         document.getElementById('total-percent').innerText = sum.toFixed(1).replace(/\.0$/, '');
 
@@ -117,9 +135,11 @@
     function calculate() {
         const TOTAL_SEATS = 13;
         const data = [
-            { name: '민주당', votes: parseFloat(document.getElementById('vote1').value) || 0 },
+            { name: '더불어민주당', votes: parseFloat(document.getElementById('vote1').value) || 0 },
             { name: '국민의힘', votes: parseFloat(document.getElementById('vote2').value) || 0 },
-            { name: '소수/기타', votes: parseFloat(document.getElementById('vote3').value) || 0 }
+            { name: '조국혁신당', votes: parseFloat(document.getElementById('vote3').value) || 0 },
+            { name: '개혁신당', votes: parseFloat(document.getElementById('vote4').value) || 0 },
+            { name: '소수/기타', votes: parseFloat(document.getElementById('vote5').value) || 0 }
         ];
 
         let eligible = data.filter(p => p.votes >= 5);
@@ -159,6 +179,8 @@
         document.getElementById('vote1').value = '';
         document.getElementById('vote2').value = '';
         document.getElementById('vote3').value = '';
+        document.getElementById('vote4').value = '';
+        document.getElementById('vote5').value = '';
         updateAll();
         document.getElementById('result-display').classList.add('hidden');
     }
