@@ -15,61 +15,11 @@
 
 <div class="w-full max-w-md bg-white border border-gray-200 rounded-3xl shadow-sm p-6 space-y-6">
     
-    <!-- 상단 헤더 및 초기화 -->
     <div class="flex justify-between items-center border-b border-gray-100 pb-3">
         <h1 class="text-xs font-bold text-gray-400 tracking-widest">제주 비례대표 계산기</h1>
         <button onclick="resetAll()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition-colors underline">초기화</button>
     </div>
     
-    <!-- 정당 입력 영역 (전부 가로 정렬) -->
-    <div class="space-y-4">
-        <!-- 더불어민주당 -->
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-blue-500 transition-colors">
-            <span class="text-base font-bold text-gray-800">더불어민주당</span>
-            <div class="flex items-end">
-                <input type="number" id="vote1" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
-            </div>
-        </div>
-
-        <!-- 국민의힘 -->
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-red-500 transition-colors">
-            <span class="text-base font-bold text-gray-800">국민의힘</span>
-            <div class="flex items-end">
-                <input type="number" id="vote2" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
-            </div>
-        </div>
-
-        <!-- 조국혁신당 -->
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-blue-400 transition-colors">
-            <span class="text-base font-bold text-gray-800">조국혁신당</span>
-            <div class="flex items-end">
-                <input type="number" id="vote3" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
-            </div>
-        </div>
-
-        <!-- 개혁신당 -->
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-orange-500 transition-colors">
-            <span class="text-base font-bold text-gray-800">개혁신당</span>
-            <div class="flex items-end">
-                <input type="number" id="vote4" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
-            </div>
-        </div>
-
-        <!-- 소수정당 및 기타 -->
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-amber-500 transition-colors">
-            <span class="text-base font-bold text-gray-800">소수정당 및 기타</span>
-            <div class="flex items-end">
-                <input type="number" id="vote5" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- 상태 요약 영역 (가로 반반 분할) -->
     <div class="bg-gray-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-gray-100">
         <div>
             <h2 class="text-[10px] font-bold text-gray-400 mb-0.5">남은 비율</h2>
@@ -89,17 +39,67 @@
             <p id="status-text" class="text-[10px] font-bold text-gray-400 italic">숫자를 입력하면 계산됩니다.</p>
         </div>
     </div>
+    
+    <div class="space-y-4">
+        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-blue-500 transition-colors">
+            <span class="text-base font-bold text-gray-800">더불어민주당</span>
+            <div class="flex items-end">
+                <input type="number" id="vote1" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
+                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
+            </div>
+        </div>
 
-    <!-- 결과창 영역 -->
+        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-red-500 transition-colors">
+            <span class="text-base font-bold text-gray-800">국민의힘</span>
+            <div class="flex items-end">
+                <input type="number" id="vote2" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
+                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-blue-400 transition-colors">
+            <span class="text-base font-bold text-gray-800">조국혁신당</span>
+            <div class="flex items-end">
+                <input type="number" id="vote3" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
+                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-orange-500 transition-colors">
+            <span class="text-base font-bold text-gray-800">개혁신당</span>
+            <div class="flex items-end">
+                <input type="number" id="vote4" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
+                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-amber-500 transition-colors">
+            <span class="text-base font-bold text-gray-800">소수정당 및 기타</span>
+            <div class="flex items-end">
+                <input type="number" id="vote5" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
+                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
+            </div>
+        </div>
+    </div>
+
     <div id="result-display" class="hidden bg-blue-50/50 border border-blue-100 rounded-2xl p-4 space-y-2"></div>
 
-    <!-- 계산 버튼 -->
-    <button id="calc-btn" onclick="calculate()" class="w-full bg-gray-900 text-white text-sm font-bold py-4 rounded-2xl hover:bg-black active:scale-[0.98] transition-all disabled:bg-gray-200 disabled:text-gray-400">
-        의석수 계산하기
-    </button>
+    <div id="reason-display" class="hidden bg-amber-50/60 border border-amber-100 rounded-2xl p-4 text-xs font-medium text-gray-700 space-y-3 max-h-64 overflow-y-auto"></div>
+
+    <div class="space-y-2">
+        <button id="calc-btn" onclick="calculate()" class="w-full bg-gray-900 text-white text-sm font-bold py-4 rounded-2xl hover:bg-black active:scale-[0.98] transition-all disabled:bg-gray-200 disabled:text-gray-400">
+            의석수 계산하기
+        </button>
+        <button id="why-btn" onclick="toggleReason()" class="hidden w-full bg-white text-gray-600 border border-gray-200 text-xs font-bold py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all">
+            ❓ 왜 이런 결과가 나왔을까?
+        </button>
+    </div>
 </div>
 
 <script>
+    // 글로벌 변수로 설명 텍스트 저장
+    let calculationLog = "";
+
     function updateAll() {
         const v1 = parseFloat(document.getElementById('vote1').value) || 0;
         const v2 = parseFloat(document.getElementById('vote2').value) || 0;
@@ -142,25 +142,57 @@
             { name: '소수/기타', votes: parseFloat(document.getElementById('vote5').value) || 0 }
         ];
 
+        // 설명 로그 초기화
+        calculationLog = `<p class="font-bold text-amber-800 text-[13px] mb-1">📊 의석 배분 상세 과정</p>`;
+
+        // 1단계: 봉쇄조항 5% 필터링
         let eligible = data.filter(p => p.votes >= 5);
+        let excluded = data.filter(p => p.votes < 5 && p.votes > 0);
+
+        if (excluded.length > 0) {
+            calculationLog += `<div class="bg-white/80 p-2 rounded-lg border border-amber-100"><b>1. 봉쇄조항 (5% 미만 탈락):</b><br>`;
+            excluded.forEach(p => { calculationLog += `❌ ${p.name}(${p.votes}%) 탈락<br>`; });
+            calculationLog += `</div>`;
+        }
+
         if (eligible.length === 0) {
             alert("5% 이상 득표한 정당이 없습니다.");
             return;
         }
 
         const totalEligibleVotes = eligible.reduce((sum, p) => sum + p.votes, 0);
+        calculationLog += `<div class="bg-white/80 p-2 rounded-lg border border-amber-100 mt-2"><b>2. 의석 배분 기준 득표율 계산:</b><br>5%를 넘긴 정당들의 총 득표율 합계는 <b>${totalEligibleVotes.toFixed(1)}%</b>입니다. 이 합계를 기준으로 각 정당의 진짜 지분을 구합니다.</div>`;
+
+        // 2단계: 1차 배분 (정수 배분)
         let allocated = 0;
+        calculationLog += `<div class="bg-white/80 p-2 rounded-lg border border-amber-100 mt-2"><b>3. 1차 의석 배분 (소수점 아래 버림):</b><ul class="list-disc pl-4 mt-1 space-y-0.5">`;
+        
         eligible = eligible.map(p => {
             const exact = (p.votes / totalEligibleVotes) * TOTAL_SEATS;
             const seats = Math.floor(Number(exact.toFixed(10)));
             allocated += seats;
+            
+            calculationLog += `<li>${p.name}: (${p.votes}% ÷ ${totalEligibleVotes.toFixed(1)}%) × 13 = <b>${exact.toFixed(3)}</b>석 ➔ <b>${seats}석</b> 우선 획득 (잔여 점수: ${ (exact - seats).toFixed(3) })</li>`;
+            
             return { ...p, seats: seats, remainder: exact - seats };
         });
-
+        
         let remainSeats = TOTAL_SEATS - allocated;
-        eligible.sort((a, b) => parseFloat(b.remainder.toFixed(10)) - parseFloat(a.remainder.toFixed(10)));
-        for (let i = 0; i < remainSeats; i++) { if (eligible[i]) eligible[i].seats += 1; }
+        calculationLog += `</ul><div class="mt-1.5 pt-1.5 border-t border-dashed border-gray-200">현재까지 배분된 의석은 총 <b>${allocated}석</b>이며, 남은 의석은 <b>${remainSeats}석</b>입니다.</div></div>`;
 
+        // 3단계: 잔여석 배분 (소수점 순)
+        if (remainSeats > 0) {
+            eligible.sort((a, b) => parseFloat(b.remainder.toFixed(10)) - parseFloat(a.remainder.toFixed(10)));
+            calculationLog += `<div class="bg-white/80 p-2 rounded-lg border border-amber-100 mt-2"><b>4. 잔여 의석 배분 (소수점이 큰 순서):</b><br>소수점 잔여 점수 순위:<br>`;
+            eligible.forEach((p, idx) => {
+                calculationLog += `${idx+1}위. ${p.name} (${p.remainder.toFixed(3)}) ${idx < remainSeats ? '➔ <b>+1석 획득!</b>' : ''}<br>`;
+            });
+            
+            for (let i = 0; i < remainSeats; i++) { if (eligible[i]) eligible[i].seats += 1; }
+            calculationLog += `</div>`;
+        }
+
+        // 결과 화면 출력
         const resBox = document.getElementById('result-display');
         resBox.innerHTML = '<p class="text-[10px] font-bold text-blue-400 mb-1 tracking-wider uppercase">시뮬레이션 결과</p>';
         resBox.classList.remove('hidden');
@@ -173,6 +205,22 @@
                 </div>
             `;
         });
+
+        // 설명 버튼 활성화 및 이전 설명창 초기화
+        document.getElementById('why-btn').classList.remove('hidden');
+        document.getElementById('reason-display').classList.add('hidden');
+        document.getElementById('reason-display').innerHTML = calculationLog;
+    }
+
+    function toggleReason() {
+        const reasonBox = document.getElementById('reason-display');
+        if (reasonBox.classList.contains('hidden')) {
+            reasonBox.classList.remove('hidden');
+            // 부드럽게 스크롤 아래로 내리기
+            reasonBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            reasonBox.classList.add('hidden');
+        }
     }
 
     function resetAll() {
@@ -183,8 +231,11 @@
         document.getElementById('vote5').value = '';
         updateAll();
         document.getElementById('result-display').classList.add('hidden');
+        document.getElementById('reason-display').classList.add('hidden');
+        document.getElementById('why-btn').classList.add('hidden');
     }
 </script>
 
 </body>
 </html>
+
