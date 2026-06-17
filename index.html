@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script>
-        const SB_URL = "https://dauzxxzmzcfwuzbbazhw.supabase.co"; 
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhdXp4eHptemNmd3V6YmJhemh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzQxNjAsImV4cCI6MjA5MzE1MDE2MH0.2qcnrpKeVz3Aa9CiWyjGDfxDcd6cVIFYVttEoQt3rkA";
+        window.SB_URL = "https://dauzxxzmzcfwuzbbazhw.supabase.co"; 
+        window.SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhdXp4eHptemNmd3V6YmJhemh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzQxNjAsImV4cCI6MjA5MzE1MDE2MH0.2qcnrpKeVz3Aa9CiWyjGDfxDcd6cVIFYVttEoQt3rkA";
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -383,20 +383,24 @@
 </div>
 
 <script>
-    // 🛠️ 변수를 안전하게 연결하기 위한 글로벌 인스턴스
-    let sb;
+    // 🛠️ 전역 인스턴스 즉시 선언 및 연결 보장
+    let sb = null;
 
-    function initSupabase() {
+    function startConnection() {
         try {
-            // 라이브러리가 로드되었고 최상단 변수(SB_URL, SB_KEY)가 있으면 클라이언트를 생성합니다.
-            if (typeof Supabase !== 'undefined' && typeof SB_URL !== 'undefined') {
-                sb = Supabase.createClient(SB_URL, SB_KEY);
-                loadComplaints(); 
+            if (typeof supabase !== 'undefined' && window.SB_URL && window.SB_KEY) {
+                // 라이브러리 객체를 안전하게 복사하여 클라이언트 초기화
+                sb = supabase.createClient(window.SB_URL, window.SB_KEY);
+                loadComplaints();
+            } else if (typeof Supabase !== 'undefined' && window.SB_URL && window.SB_KEY) {
+                sb = Supabase.createClient(window.SB_URL, window.SB_KEY);
+                loadComplaints();
             } else {
-                setTimeout(initSupabase, 100);
+                // 아직 미로드 시 0.05초 단위 초고속 재시도 루프
+                setTimeout(startConnection, 50);
             }
-        } catch (e) {
-            console.error("Supabase 초기화 실패:", e);
+        } catch(e) {
+            console.error("연동 실패 리포트: ", e);
         }
     }
 
@@ -522,11 +526,11 @@
         renderImportantSchedules("2026년 6월");
     }
 
-    // 초기 실행
-    window.onload = function() {
+    // 🏁 최초 로딩 진입점
+    window.addEventListener('DOMContentLoaded', () => {
         renderImportantSchedules("2026년 6월");
-        initSupabase(); 
-    };
+        startConnection();
+    });
 </script>
 </body>
 </html>
