@@ -3,239 +3,530 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제주 비례대표 계산기</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>통합 정보 관리소</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        const SB_URL = "https://dauzxxzmzcfwuzbbazhw.supabase.co"; 
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhdXp4eHptemNmd3V6YmJhemh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzQxNjAsImV4cCI6MjA5MzE1MDE2MH0.2qcnrpKeVz3Aa9CiWyjGDfxDcd6cVIFYVttEoQt3rkA";
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght=400;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.03em; }
-        input[type="number"]::-webkit-inner-spin-button { display: none; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        /* 메인 대시보드 컨테이너 */
+        .dashboard-container {
+            width: 100%;
+            max-width: 460px;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+        }
+
+        /* 📂 상단 타이틀 영역 */
+        .header-section {
+            margin-bottom: 24px;
+        }
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        /* 탭 메뉴 스타일 */
+        .tab-menu {
+            display: flex;
+            background-color: #dee2e6;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 14px 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: #495057;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.15s ease;
+        }
+        .tab-item.active {
+            background-color: #1a62e7;
+            color: #ffffff;
+        }
+
+        /* 🚫 콘텐츠 패널 독립 제어 구획 */
+        .content-panel {
+            display: none;
+        }
+        .content-panel.active {
+            display: block;
+        }
+        
+        /* ⬜ 메인 카드 컨테이너 */
+        .card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+            margin-bottom: 20px;
+        }
+
+        /* 📝 폼 입력 요소 스타일 */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .form-select, .form-input, .form-textarea {
+            width: 100%;
+            border: 1px solid #ced4da;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: #212529;
+            background-color: #ffffff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-select {
+            background-color: #e9ecef;
+            cursor: pointer;
+        }
+        .form-select:focus, .form-input:focus, .form-textarea:focus {
+            border-color: #1a62e7;
+        }
+        .form-textarea {
+            resize: none;
+            height: 110px;
+        }
+        ::placeholder {
+            color: #868e96;
+        }
+
+        /* 🔵 등록 버튼 스타일 */
+        .btn-submit {
+            width: 100%;
+            background-color: #1a62e7;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 0;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 6px;
+        }
+        .btn-submit:hover {
+            background-color: #124cb6;
+        }
+
+        /* 📋 실시간 목록 전용 디자인 */
+        .list-container-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+        }
+        .list-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 16px;
+        }
+        .data-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .data-item {
+            padding: 16px;
+            background-color: #f4f6f9;
+            border-radius: 14px;
+            font-size: 14px;
+            color: #333333;
+            font-weight: 500;
+            line-height: 1.5;
+            box-shadow: inset 3px 0px 0px #dee2e6, 0 4px 10px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .data-item .item-sub {
+            font-size: 12px;
+            color: #868e96;
+            font-weight: 400;
+        }
+
+        /* 📅 달력 전용 스타일 */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .nav-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-nav {
+            background: #e9ecef;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .current-month {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .btn-today {
+            background: #e9ecef;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .important-schedule-section {
+            background-color: #f3f0ff;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+        .schedule-section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #5c36cc;
+            margin-bottom: 10px;
+        }
+        .schedule-count {
+            font-size: 11px;
+            background: #ffffff;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+        .schedule-date-badge {
+            font-size: 12px;
+            font-weight: 700;
+            color: #5c36cc;
+            width: 50px;
+        }
+        .schedule-text {
+            font-size: 13px;
+            color: #343a40;
+            font-weight: 500;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            row-gap: 16px;
+            text-align: center;
+        }
+        .weekday {
+            font-size: 12px;
+            color: #868e96;
+            padding-bottom: 10px;
+        }
+        .day {
+            font-size: 13px;
+            min-height: 52px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .day.other-month { color: #dee2e6; }
+        .event-badge {
+            margin-top: 4px;
+            font-size: 10px;
+            color: #ffffff;
+            background-color: #5c36cc;
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+<body>
 
-<div class="w-full max-w-md bg-white border border-gray-200 rounded-3xl shadow-sm p-6 space-y-6">
+<div class="dashboard-container">
     
-    <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-        <h1 class="text-xs font-bold text-gray-400 tracking-widest">제주 비례대표 계산기</h1>
-        <button onclick="resetAll()" class="text-[10px] font-bold text-gray-400 hover:text-red-500 transition-colors underline">초기화</button>
-    </div>
-    
-    <div class="bg-gray-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-gray-100">
-        <div>
-            <h2 class="text-[10px] font-bold text-gray-400 mb-0.5">남은 비율</h2>
-            <div class="flex items-baseline">
-                <span id="remain-percent" class="text-2xl font-black text-gray-900">100</span>
-                <span class="text-xs font-bold text-gray-400 ml-0.5">%</span>
-            </div>
-        </div>
-        <div>
-            <h2 class="text-[10px] font-bold text-gray-400 mb-0.5">현재 합계</h2>
-            <div class="flex items-baseline">
-                <span id="total-percent" class="text-2xl font-bold text-gray-900">0</span>
-                <span class="text-xs font-bold text-gray-300 ml-0.5">%</span>
-            </div>
-        </div>
-        <div class="col-span-2 border-t border-gray-200/60 pt-2">
-            <p id="status-text" class="text-[10px] font-bold text-gray-400 italic">숫자를 입력하면 계산됩니다.</p>
+    <div class="header-section">
+        <h1 class="header-title">📂 통합 정보 관리소</h1>
+        <div class="tab-menu">
+            <div class="tab-item active" onclick="switchTab(0)">민원 관리</div>
+            <div class="tab-item" onclick="switchTab(1)">교육 내용</div>
+            <div class="tab-item" onclick="switchTab(2)">일정 관리</div>
         </div>
     </div>
-    
-    <div class="space-y-4">
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-blue-500 transition-colors">
-            <span class="text-base font-bold text-gray-800">더불어민주당</span>
-            <div class="flex items-end">
-                <input type="number" id="vote1" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
+
+    <div class="content-panel active" id="panel-0">
+        <div class="card">
+            <div class="form-group">
+                <select class="form-select" id="complaint-region">
+                    <option>서귀포시</option>
+                    <option>안덕면</option>
+                    <option>대정읍</option>
+                    <option>남원읍</option>
+                </select>
+                <input type="text" class="form-input" id="complaint-title" placeholder="민원 제목">
+                <textarea class="form-textarea" id="complaint-content" placeholder="민원 내용"></textarea>
+                <textarea class="form-textarea" id="complaint-reply" placeholder="답변 내용"></textarea>
+                <button class="btn-submit" onclick="submitComplaint()">민원 등록</button>
             </div>
         </div>
-
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-red-500 transition-colors">
-            <span class="text-base font-bold text-gray-800">국민의힘</span>
-            <div class="flex items-end">
-                <input type="number" id="vote2" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
-            </div>
+        
+        <div class="list-container-card">
+            <h2 class="list-title">📋 접수된 민원 현황 목록</h2>
+            <ul class="data-list" id="complaint-list-target">
+                <li style="text-align:center; color:#868e96; font-size:13px; padding:10px 0;">데이터를 불러오는 중입니다...</li>
+            </ul>
         </div>
+    </div>
 
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-blue-400 transition-colors">
-            <span class="text-base font-bold text-gray-800">조국혁신당</span>
-            <div class="flex items-end">
-                <input type="number" id="vote3" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
-            </div>
-        </div>
-
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-orange-500 transition-colors">
-            <span class="text-base font-bold text-gray-800">개혁신당</span>
-            <div class="flex items-end">
-                <input type="number" id="vote4" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
-            </div>
-        </div>
-
-        <div class="flex items-center justify-between border-b-2 border-gray-900 pb-2 focus-within:border-amber-500 transition-colors">
-            <span class="text-base font-bold text-gray-800">소수정당 및 기타</span>
-            <div class="flex items-end">
-                <input type="number" id="vote5" oninput="updateAll()" class="bg-transparent text-right text-xl font-black outline-none w-20" placeholder="0">
-                <span class="text-xs font-bold text-gray-300 ml-1">%</span>
+    <div class="content-panel" id="panel-1">
+        <div class="card">
+            <div class="form-group">
+                <select class="form-select" id="edu-category">
+                    <option>교육 분류 선택</option>
+                    <option>직무 교육</option>
+                    <option>주민 교육</option>
+                    <option>복지/보건 프로그램</option>
+                </select>
+                <input type="text" class="form-input" id="edu-title" placeholder="교육 명칭(제목)">
+                <textarea class="form-textarea" id="edu-content" placeholder="교육 상세 내용 및 장소"></textarea>
+                <input type="text" class="form-input" id="edu-target" placeholder="대상자 및 정원 (예: 전직원 / 선착순 20명)">
+                <button class="btn-submit" onclick="submitEducation()">교육 내용 등록</button>
             </div>
         </div>
     </div>
 
-    <div id="result-display" class="hidden bg-blue-50/50 border border-blue-100 rounded-2xl p-4 space-y-2"></div>
+    <div class="content-panel" id="panel-2">
+        <div class="card" style="padding: 16px 12px;">
+            <div class="calendar-header">
+                <div class="nav-btn-group">
+                    <button class="btn-nav" onclick="changeMonth(-1)">&lt;</button>
+                    <button class="btn-nav" onclick="changeMonth(1)">&gt;</button>
+                </div>
+                <div class="current-month" id="calendarYearMonth">2026년 6월</div>
+                <button class="btn-today" onclick="goToday()">today</button>
+            </div>
 
-    <div id="reason-display" class="hidden bg-amber-50/60 border border-amber-100 rounded-2xl p-4 text-xs font-medium text-gray-700 space-y-3 max-h-64 overflow-y-auto"></div>
+            <div class="important-schedule-section">
+                <div class="schedule-section-title">
+                    <span>📅 이달의 주요 일정</span>
+                    <span class="schedule-count" id="importantCount">총 0건</span>
+                </div>
+                <div class="schedule-list" id="importantScheduleList"></div>
+            </div>
 
-    <div class="space-y-2">
-        <button id="calc-btn" onclick="calculate()" class="w-full bg-gray-900 text-white text-sm font-bold py-4 rounded-2xl hover:bg-black active:scale-[0.98] transition-all disabled:bg-gray-200 disabled:text-gray-400">
-            의석수 계산하기
-        </button>
-        <button id="why-btn" onclick="toggleReason()" class="hidden w-full bg-white text-gray-600 border border-gray-200 text-xs font-bold py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all">
-            ❓ 왜 이런 결과가 나왔을까?
-        </button>
+            <div class="calendar-grid">
+                <div class="weekday">일</div><div class="weekday">월</div><div class="weekday">화</div><div class="weekday">수</div><div class="weekday">목</div><div class="weekday">금</div><div class="weekday">토</div>
+                <div class="day other-month">31일</div>
+                <div class="day">1일</div><div class="day">2일</div><div class="day">3일</div><div class="day">4일</div><div class="day">5일</div><div class="day">6일</div>
+                <div class="day">7일</div><div class="day">8일</div><div class="day">9일</div><div class="day">10일</div><div class="day">11일</div><div class="day">12일</div><div class="day">13일</div>
+                <div class="day">14일</div><div class="day">15일</div><div class="day">16일</div>
+                <div class="day">17일<div class="event-badge">제주 미</div></div>
+                <div class="day">18일</div><div class="day">19일</div><div class="day">20일</div>
+                <div class="day">21일</div><div class="day">22일</div><div class="day">23일</div>
+                <div class="day">24일<div class="event-badge">서귀포</div></div>
+                <div class="day">25일</div><div class="day">26일</div><div class="day">27일</div>
+                <div class="day">28일</div><div class="day">29일</div><div class="day">30일</div>
+                <div class="day other-month">1일</div><div class="day other-month">2일</div><div class="day other-month">3일</div><div class="day other-month">4일</div>
+            </div>
+        </div>
     </div>
+
 </div>
 
 <script>
-    // 글로벌 변수로 설명 텍스트 저장
-    let calculationLog = "";
+    // 🛠️ 변수를 안전하게 연결하기 위한 글로벌 인스턴스
+    let sb;
 
-    function updateAll() {
-        const v1 = parseFloat(document.getElementById('vote1').value) || 0;
-        const v2 = parseFloat(document.getElementById('vote2').value) || 0;
-        const v3 = parseFloat(document.getElementById('vote3').value) || 0;
-        const v4 = parseFloat(document.getElementById('vote4').value) || 0;
-        const v5 = parseFloat(document.getElementById('vote5').value) || 0;
-        
-        const sum = v1 + v2 + v3 + v4 + v5;
-        let remain = 100 - sum;
-        
-        if (remain < 0) remain = 0;
-
-        document.getElementById('remain-percent').innerText = remain.toFixed(1).replace(/\.0$/, '');
-        document.getElementById('total-percent').innerText = sum.toFixed(1).replace(/\.0$/, '');
-
-        const statusText = document.getElementById('status-text');
-        const remainDisplay = document.getElementById('remain-percent');
-        const btn = document.getElementById('calc-btn');
-
-        if (sum > 100.1) {
-            remainDisplay.classList.add('text-red-500');
-            statusText.innerText = "100%를 초과했습니다";
-            statusText.classList.replace('text-gray-400', 'text-red-500');
-            btn.disabled = true;
-        } else {
-            remainDisplay.classList.remove('text-red-500');
-            statusText.innerText = sum >= 99.9 ? "정상 입력됨" : "남은 비율을 채워주세요";
-            statusText.classList.replace('text-red-500', 'text-gray-400');
-            btn.disabled = false;
+    function initSupabase() {
+        try {
+            // 라이브러리가 로드되었고 최상단 변수(SB_URL, SB_KEY)가 있으면 클라이언트를 생성합니다.
+            if (typeof Supabase !== 'undefined' && typeof SB_URL !== 'undefined') {
+                sb = Supabase.createClient(SB_URL, SB_KEY);
+                loadComplaints(); 
+            } else {
+                setTimeout(initSupabase, 100);
+            }
+        } catch (e) {
+            console.error("Supabase 초기화 실패:", e);
         }
     }
 
-    function calculate() {
-        const TOTAL_SEATS = 13;
-        const data = [
-            { name: '더불어민주당', votes: parseFloat(document.getElementById('vote1').value) || 0 },
-            { name: '국민의힘', votes: parseFloat(document.getElementById('vote2').value) || 0 },
-            { name: '조국혁신당', votes: parseFloat(document.getElementById('vote3').value) || 0 },
-            { name: '개혁신당', votes: parseFloat(document.getElementById('vote4').value) || 0 },
-            { name: '소수/기타', votes: parseFloat(document.getElementById('vote5').value) || 0 }
-        ];
+    // 🛠️ 탭 스위칭 매커니즘
+    function switchTab(index) {
+        const tabs = document.querySelectorAll('.tab-item');
+        const panels = document.querySelectorAll('.content-panel');
+        
+        tabs.forEach(tab => tab.classList.remove('active'));
+        panels.forEach(panel => panel.classList.remove('active'));
+        
+        tabs[index].classList.add('active');
+        document.getElementById('panel-' + index).classList.add('active');
+    }
 
-        // 설명 로그 초기화
-        calculationLog = `<p class="font-bold text-amber-800 text-[13px] mb-1">📊 의석 배분 상세 과정</p>`;
-
-        // 1단계: 봉쇄조항 5% 필터링
-        let eligible = data.filter(p => p.votes >= 5);
-        let excluded = data.filter(p => p.votes < 5 && p.votes > 0);
-
-        if (excluded.length > 0) {
-            calculationLog += `<div class="bg-white/80 p-2 rounded-lg border border-amber-100"><b>1. 봉쇄조항 (5% 미만 탈락):</b><br>`;
-            excluded.forEach(p => { calculationLog += `❌ ${p.name}(${p.votes}%) 탈락<br>`; });
-            calculationLog += `</div>`;
+    // 📋 민원 목록 실시간 동기화 호출 (Read)
+    async function loadComplaints() {
+        const target = document.getElementById('complaint-list-target');
+        if (!sb) return;
+        
+        try {
+            const { data, error } = await sb.from('complaints').select('*').order('created_at', { ascending: false });
+            
+            if (error || !data || data.length === 0) {
+                target.innerHTML = '<li style="text-align:center; color:#868e96; font-size:13px; padding:10px 0;">접수된 민원이 없습니다.</li>';
+                return;
+            }
+            
+            let htmlContent = '';
+            for(let i=0; i<data.length; i++) {
+                let item = data[i];
+                let replyHtml = '';
+                if(item.reply) {
+                    replyHtml = '<div class="item-sub" style="color:#e64980; font-weight:700; margin-top:2px;">답변: ' + item.reply + '</div>';
+                }
+                
+                htmlContent += '<li class="data-item">' +
+                    '<div style="font-weight: 700; color: #1a62e7;">📌 [' + item.region + '] ' + item.title + '</div>' +
+                    '<div class="item-sub" style="margin-top: 4px; color:#212529;">내용: ' + item.content + '</div>' +
+                    replyHtml +
+                '</li>';
+            }
+            target.innerHTML = htmlContent;
+        } catch(e) {
+            target.innerHTML = '<li style="text-align:center; color:#868e96; font-size:13px; padding:10px 0;">민원 목록을 불러오지 못했습니다.</li>';
         }
+    }
 
-        if (eligible.length === 0) {
-            alert("5% 이상 득표한 정당이 없습니다.");
+    // 📋 민원 등록 핸들러 (Create)
+    async function submitComplaint() {
+        if (!sb) return alert('Supabase 연동이 아직 완료되지 않았습니다.');
+        try {
+            const region = document.getElementById('complaint-region').value;
+            const title = document.getElementById('complaint-title').value;
+            const content = document.getElementById('complaint-content').value;
+            const reply = document.getElementById('complaint-reply').value;
+
+            if(!title || !content) return alert('제목과 내용을 모두 기입해 주세요.');
+
+            const { error } = await sb.from('complaints').insert([{ region, title, content, reply }]);
+            
+            if (error) {
+                alert('등록 중 에러 발생: ' + error.message);
+            } else {
+                alert('새 민원이 안전하게 등록되었습니다!');
+                document.getElementById('complaint-title').value = '';
+                document.getElementById('complaint-content').value = '';
+                document.getElementById('complaint-reply').value = '';
+                loadComplaints();
+            }
+        } catch(e) { 
+            alert('데이터 전송 실패'); 
+        }
+    }
+
+    // 🎓 교육 등록 핸들러
+    async function submitEducation() {
+        alert("교육 내용 탭은 연동 대기 상태입니다.");
+    }
+
+    // 📅 달력 데이터 및 연동 규칙
+    const monthlyData = {
+        "2026년 6월": [
+            { date: "17일(수)", text: "제주 미팅 및 현장 점검" },
+            { date: "24일(수)", text: "서귀포 핵심 보건/복지 세분화 목록 검토" }
+        ],
+        "2026년 7월": [
+            { date: "05일(일)", text: "하반기 업무 대시보드 리뉴얼 오픈" }
+        ]
+    };
+
+    function renderImportantSchedules(currentMonthText) {
+        const listContainer = document.getElementById("importantScheduleList");
+        const countBadge = document.getElementById("importantCount");
+        const schedules = monthlyData[currentMonthText] || [];
+        
+        countBadge.innerText = '총 ' + schedules.length + '건';
+        
+        if (schedules.length === 0) {
+            listContainer.innerHTML = '<div style="text-align:center; color:#868e96; font-size:12px; padding:10px 0;">등록된 주요 일정이 없습니다.</div>';
             return;
         }
-
-        const totalEligibleVotes = eligible.reduce((sum, p) => sum + p.votes, 0);
-        calculationLog += `<div class="bg-white/80 p-2 rounded-lg border border-amber-100 mt-2"><b>2. 의석 배분 기준 득표율 계산:</b><br>5%를 넘긴 정당들의 총 득표율 합계는 <b>${totalEligibleVotes.toFixed(1)}%</b>입니다. 이 합계를 기준으로 각 정당의 진짜 지분을 구합니다.</div>`;
-
-        // 2단계: 1차 배분 (정수 배분)
-        let allocated = 0;
-        calculationLog += `<div class="bg-white/80 p-2 rounded-lg border border-amber-100 mt-2"><b>3. 1차 의석 배분 (소수점 아래 버림):</b><ul class="list-disc pl-4 mt-1 space-y-0.5">`;
         
-        eligible = eligible.map(p => {
-            const exact = (p.votes / totalEligibleVotes) * TOTAL_SEATS;
-            const seats = Math.floor(Number(exact.toFixed(10)));
-            allocated += seats;
-            
-            calculationLog += `<li>${p.name}: (${p.votes}% ÷ ${totalEligibleVotes.toFixed(1)}%) × 13 = <b>${exact.toFixed(3)}</b>석 ➔ <b>${seats}석</b> 우선 획득 (잔여 점수: ${ (exact - seats).toFixed(3) })</li>`;
-            
-            return { ...p, seats: seats, remainder: exact - seats };
-        });
-        
-        let remainSeats = TOTAL_SEATS - allocated;
-        calculationLog += `</ul><div class="mt-1.5 pt-1.5 border-t border-dashed border-gray-200">현재까지 배분된 의석은 총 <b>${allocated}석</b>이며, 남은 의석은 <b>${remainSeats}석</b>입니다.</div></div>`;
-
-        // 3단계: 잔여석 배분 (소수점 순)
-        if (remainSeats > 0) {
-            eligible.sort((a, b) => parseFloat(b.remainder.toFixed(10)) - parseFloat(a.remainder.toFixed(10)));
-            calculationLog += `<div class="bg-white/80 p-2 rounded-lg border border-amber-100 mt-2"><b>4. 잔여 의석 배분 (소수점이 큰 순서):</b><br>소수점 잔여 점수 순위:<br>`;
-            eligible.forEach((p, idx) => {
-                calculationLog += `${idx+1}위. ${p.name} (${p.remainder.toFixed(3)}) ${idx < remainSeats ? '➔ <b>+1석 획득!</b>' : ''}<br>`;
-            });
-            
-            for (let i = 0; i < remainSeats; i++) { if (eligible[i]) eligible[i].seats += 1; }
-            calculationLog += `</div>`;
+        let scheduleHtml = '';
+        for(let i=0; i<schedules.length; i++) {
+            scheduleHtml += '<div class="schedule-item">' +
+                '<div class="schedule-date-badge">' + schedules[i].date + '</div>' +
+                '<div class="schedule-text">' + schedules[i].text + '</div>' +
+            '</div>';
         }
-
-        // 결과 화면 출력
-        const resBox = document.getElementById('result-display');
-        resBox.innerHTML = '<p class="text-[10px] font-bold text-blue-400 mb-1 tracking-wider uppercase">시뮬레이션 결과</p>';
-        resBox.classList.remove('hidden');
-        
-        eligible.sort((a,b)=>b.seats - a.seats).forEach(p => {
-            resBox.innerHTML += `
-                <div class="flex justify-between items-center text-sm font-bold py-0.5">
-                    <span class="text-gray-700">${p.name}</span>
-                    <span class="text-blue-600 font-black">${p.seats}석</span>
-                </div>
-            `;
-        });
-
-        // 설명 버튼 활성화 및 이전 설명창 초기화
-        document.getElementById('why-btn').classList.remove('hidden');
-        document.getElementById('reason-display').classList.add('hidden');
-        document.getElementById('reason-display').innerHTML = calculationLog;
+        listContainer.innerHTML = scheduleHtml;
     }
 
-    function toggleReason() {
-        const reasonBox = document.getElementById('reason-display');
-        if (reasonBox.classList.contains('hidden')) {
-            reasonBox.classList.remove('hidden');
-            // 부드럽게 스크롤 아래로 내리기
-            reasonBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else {
-            reasonBox.classList.add('hidden');
-        }
+    function changeMonth(direction) {
+        const titleEl = document.getElementById("calendarYearMonth");
+        titleEl.innerText = direction === 1 ? "2026년 7월" : "2026년 6월";
+        renderImportantSchedules(titleEl.innerText);
     }
 
-    function resetAll() {
-        document.getElementById('vote1').value = '';
-        document.getElementById('vote2').value = '';
-        document.getElementById('vote3').value = '';
-        document.getElementById('vote4').value = '';
-        document.getElementById('vote5').value = '';
-        updateAll();
-        document.getElementById('result-display').classList.add('hidden');
-        document.getElementById('reason-display').classList.add('hidden');
-        document.getElementById('why-btn').classList.add('hidden');
+    function goToday() {
+        const titleEl = document.getElementById("calendarYearMonth");
+        titleEl.innerText = "2026년 6월";
+        renderImportantSchedules("2026년 6월");
     }
+
+    // 초기 실행
+    window.onload = function() {
+        renderImportantSchedules("2026년 6월");
+        initSupabase(); 
+    };
 </script>
-
 </body>
 </html>
-
