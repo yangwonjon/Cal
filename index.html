@@ -40,6 +40,124 @@
         .data-item .item-sub { font-size: 12px; color: #868e96; font-weight: 400; }
         .btn-delete-item { position: absolute; top: 14px; right: 14px; background: #ffe3e3; color: #e03131; border: none; padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
         .btn-delete-item:hover { background: #fa5252; color: #ffffff; }
+
+        /* 지역 요약 카드 */
+        .region-summary-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            background: #ffffff;
+            border-radius: 14px;
+            cursor: pointer;
+            border: 1.5px solid #e9ecef;
+            transition: all 0.18s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .region-summary-card:hover {
+            border-color: #1a62e7;
+            box-shadow: 0 4px 16px rgba(26,98,231,0.12);
+            transform: translateY(-1px);
+        }
+        .region-summary-left { display: flex; align-items: center; gap: 12px; }
+        .region-icon { font-size: 20px; }
+        .region-name { font-size: 15px; font-weight: 700; color: #212529; }
+        .region-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #1a62e7;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .region-badge-arrow { font-size: 12px; opacity: 0.7; }
+
+        /* 상세 뷰 슬라이드 오버레이 */
+        .detail-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: rgba(0,0,0,0.35);
+            justify-content: flex-end;
+        }
+        .detail-overlay.open { display: flex; }
+        .detail-panel {
+            width: 100%;
+            max-width: 460px;
+            height: 100%;
+            background: #f8f9fa;
+            border-radius: 24px 24px 0 0;
+            overflow-y: auto;
+            padding: 24px 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            margin: auto;
+        }
+        .detail-overlay.open .detail-panel { transform: translateY(0); }
+        .detail-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .detail-panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a62e7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-detail-close {
+            background: #e9ecef;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #495057;
+        }
+        .detail-item {
+            padding: 18px 16px;
+            background: #ffffff;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            border-left: 4px solid #1a62e7;
+            position: relative;
+        }
+        .detail-item-title { font-size: 15px; font-weight: 700; color: #1a62e7; padding-right: 44px; margin-bottom: 8px; }
+        .detail-item-content { font-size: 13px; color: #343a40; margin-bottom: 6px; line-height: 1.6; }
+        .detail-item-reply { font-size: 13px; color: #e64980; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ffe3e3; }
+        .detail-empty { text-align: center; color: #868e96; font-size: 13px; padding: 30px 0; }
+
+        /* 총계 배너 */
+        .total-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #1a62e7 0%, #3b82f6 100%);
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        .total-banner-label { font-size: 13px; font-weight: 500; opacity: 0.85; }
+        .total-banner-count { font-size: 22px; font-weight: 700; }
+
+        /* 달력 관련 */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .nav-btn-group { display: flex; gap: 6px; }
         .btn-nav { background: #e9ecef; border: none; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-weight: bold; }
@@ -61,7 +179,7 @@
         .event-dot { width: 6px; height: 6px; background-color: #5c36cc; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
         .day.has-event { cursor: pointer; }
 
-        /* 모달 */
+        /* 일정 모달 */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; justify-content: center; align-items: center; }
         .modal-overlay.open { display: flex; }
         .modal-box { background: #ffffff; border-radius: 20px; padding: 24px 20px; width: 300px; max-width: 90vw; box-shadow: 0 16px 48px rgba(0,0,0,0.18); }
@@ -86,11 +204,22 @@
     </div>
 </div>
 
+<!-- 민원 상세 오버레이 -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetailOverlay(event)">
+    <div class="detail-panel" id="detailPanel">
+        <div class="detail-panel-header">
+            <div class="detail-panel-title" id="detailPanelTitle">📌 지역 건의</div>
+            <button class="btn-detail-close" onclick="closeDetail()">✕</button>
+        </div>
+        <div id="detailPanelBody"></div>
+    </div>
+</div>
+
 <div class="dashboard-container">
     <div class="header-section">
         <h1 class="header-title">📂 기록 저장 공간</h1>
         <div class="tab-menu">
-            <div class="tab-item active" onclick="switchTab(0)">민원 관리</div>
+            <div class="tab-item active" onclick="switchTab(0)">건의 사항</div>
             <div class="tab-item" onclick="switchTab(1)">메모 & 공부 내용</div>
             <div class="tab-item" onclick="switchTab(2)">일정 관리</div>
         </div>
@@ -102,27 +231,30 @@
             <div class="form-group">
                 <select class="form-select" id="complaint-region">
                     <option>서귀포시</option>
-<option>송산 정방 중앙 천지</option>
-<option>효돈 영천</option>
-<option>동홍 서홍</option>
-<option>대륜 대천</option>
-<option>중문 예래 색달</option>
-<option>남원읍</option>
-<option>대정읍</option>
-<option>성산읍</option>
-<option>안덕면</option>
-<option>표선면</option>
-
+                    <option>송산 정방 중앙 천지</option>
+                    <option>효돈 영천</option>
+                    <option>동홍 서홍</option>
+                    <option>대륜 대천</option>
+                    <option>중문 예래 색달</option>
+                    <option>남원읍</option>
+                    <option>대정읍</option>
+                    <option>성산읍</option>
+                    <option>안덕면</option>
+                    <option>표선면</option>
                 </select>
-                <input type="text" class="form-input" id="complaint-title" placeholder="민원 제목">
-                <textarea class="form-textarea" id="complaint-content" placeholder="민원 내용"></textarea>
-                <textarea class="form-textarea" id="complaint-reply" placeholder="답변 내용"></textarea>
-                <button class="btn-submit" onclick="submitComplaint()">민원 등록</button>
+                <input type="text" class="form-input" id="complaint-title" placeholder="건의 제목">
+                <textarea class="form-textarea" id="complaint-content" placeholder=" 내용"></textarea>
+                <textarea class="form-textarea" id="complaint-reply" placeholder="해결 방안"></textarea>
+                <button class="btn-submit" onclick="submitComplaint()">등록</button>
             </div>
         </div>
+
+        <!-- 지역별 현황 요약 -->
         <div class="list-container-card">
-            <h2 class="list-title">📋 접수된 민원 현황 목록</h2>
-            <ul class="data-list" id="complaint-list-target"></ul>
+            <h2 class="list-title">📊 지역별 건의 현황</h2>
+            <div id="region-summary-target">
+                <div style="text-align:center; color:#868e96; font-size:13px; padding:20px 0;">불러오는 중...</div>
+            </div>
         </div>
     </div>
 
@@ -180,6 +312,7 @@
 
 <script>
     let sb = null;
+    let allComplaintsCache = [];
 
     // ─── 초기화 ───────────────────────────────────────────────────────────────
     function startConnection() {
@@ -205,24 +338,99 @@
 
     // ─── 민원 ─────────────────────────────────────────────────────────────────
     async function loadComplaints() {
-        const target = document.getElementById('complaint-list-target');
+        const summaryTarget = document.getElementById('region-summary-target');
         if (!sb) return;
+
         const { data, error } = await sb.from('complaints').select('*').order('id', { ascending: false });
+
         if (error || !data || data.length === 0) {
-            target.innerHTML = '<li style="text-align:center; color:#868e96; font-size:13px; padding:10px 0;">민원이 없습니다.</li>';
+            allComplaintsCache = [];
+            summaryTarget.innerHTML = '<div style="text-align:center; color:#868e96; font-size:13px; padding:20px 0;">접수된 건의가 없습니다.</div>';
             return;
         }
-        let html = '';
+
+        allComplaintsCache = data;
+
+        // 지역별 집계
+        const regionMap = {};
         data.forEach(item => {
-            const replyHtml = item.reply ? `<div class="item-sub" style="color:#e64980; font-weight:700;">답변: ${item.reply}</div>` : '';
-            html += `<li class="data-item">
-                <button class="btn-delete-item" onclick="deleteComplaint(${item.id})">삭제</button>
-                <div style="font-weight:700; color:#1a62e7; padding-right:40px;">📌 [${item.region}] ${item.title}</div>
-                <div class="item-sub" style="color:#212529; margin-top:4px;">내용: ${item.content}</div>
-                ${replyHtml}
-            </li>`;
+            if (!regionMap[item.region]) regionMap[item.region] = [];
+            regionMap[item.region].push(item);
         });
-        target.innerHTML = html;
+
+        const regionIcons = {
+            '서귀포시': '🏙️', '송산 정방 중앙 천지': '🌊', '효돈 영천': '🌿',
+            '동홍 서홍': '🏡', '대륜 대천': '🌾', '중문 예래 색달': '🌺',
+            '남원읍': '🌴', '대정읍': '⛵', '성산읍': '🌅', '안덕면': '🍊', '표선면': '🐴'
+        };
+
+        const totalCount = data.length;
+
+        let html = `<div class="total-banner">
+            <span class="total-banner-label">📋 전체 건의 사항</span>
+            <span class="total-banner-count">${totalCount}건</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">`;
+
+        Object.entries(regionMap)
+            .sort((a, b) => b[1].length - a[1].length)
+            .forEach(([region, items]) => {
+                const icon = regionIcons[region] || '📍';
+                html += `<div class="region-summary-card" onclick="openDetail('${region}')">
+                    <div class="region-summary-left">
+                        <span class="region-icon">${icon}</span>
+                        <span class="region-name">${region}</span>
+                    </div>
+                    <div class="region-badge">
+                        ${items.length}건
+                        <span class="region-badge-arrow">›</span>
+                    </div>
+                </div>`;
+            });
+
+        html += '</div>';
+        summaryTarget.innerHTML = html;
+    }
+
+    // ─── 지역 상세 뷰 ─────────────────────────────────────────────────────────
+    function openDetail(region) {
+        const items = allComplaintsCache.filter(c => c.region === region);
+
+        document.getElementById('detailPanelTitle').innerHTML = `📌 ${region} 민원 <span style="font-size:14px; color:#6b7280; font-weight:500;">${items.length}건</span>`;
+
+        let bodyHtml = '';
+        if (items.length === 0) {
+            bodyHtml = '<div class="detail-empty">민원 내용이 없습니다.</div>';
+        } else {
+            items.forEach(item => {
+                const replyHtml = item.reply
+                    ? `<div class="detail-item-reply">💬 해결 방안: ${item.reply}</div>`
+                    : '';
+                bodyHtml += `<div class="detail-item">
+                    <button class="btn-delete-item" onclick="deleteComplaint(${item.id})">삭제</button>
+                    <div class="detail-item-title">📌 ${item.title}</div>
+                    <div class="detail-item-content">📝 ${item.content}</div>
+                    ${replyHtml}
+                </div>`;
+            });
+        }
+
+        document.getElementById('detailPanelBody').innerHTML = bodyHtml;
+
+        const overlay = document.getElementById('detailOverlay');
+        overlay.classList.add('open');
+        // 애니메이션을 위해 약간 지연
+        setTimeout(() => {
+            document.getElementById('detailPanel').style.transform = 'translateY(0)';
+        }, 10);
+    }
+
+    function closeDetail() {
+        document.getElementById('detailOverlay').classList.remove('open');
+    }
+
+    function closeDetailOverlay(e) {
+        if (e.target === document.getElementById('detailOverlay')) closeDetail();
     }
 
     async function submitComplaint() {
@@ -245,6 +453,7 @@
         const { error } = await sb.from('complaints').delete().eq('id', id);
         if (error) return alert('삭제 실패: ' + error.message);
         alert('삭제되었습니다.');
+        closeDetail();
         loadComplaints();
     }
 
@@ -352,7 +561,7 @@
         gridTarget.innerHTML = gridHtml;
     }
 
-    // ─── 모달 ─────────────────────────────────────────────────────────────────
+    // ─── 일정 모달 ────────────────────────────────────────────────────────────
     function openModal(dateStr, eventsJson) {
         const events = JSON.parse(eventsJson.replace(/&quot;/g, '"'));
         const parts  = dateStr.split('-');
