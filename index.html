@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>통합 정보 관리소</title>
+    <title>데이터 베이스</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    
+
     <script>
         window.SB_URL = "https://dauzxxzmzcfwuzbbazhw.supabase.co"; 
         window.SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhdXp4eHptemNmd3V6YmJhemh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzQxNjAsImV4cCI6MjA5MzE1MDE2MH0.2qcnrpKeVz3Aa9CiWyjGDfxDcd6cVIFYVttEoQt3rkA";
@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+
     <style>
         * { box-sizing: border-box; font-family: 'Noto Sans KR', sans-serif; margin: 0; padding: 0; }
         body { background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
@@ -57,15 +57,38 @@
         .weekday { font-size: 12px; color: #868e96; padding-bottom: 10px; }
         .day { font-size: 13px; min-height: 52px; display: flex; flex-direction: column; align-items: center; position: relative; }
         .day.other-month { color: #dee2e6; }
-        .event-container { width: 100%; display: flex; flex-direction: column; gap: 2px; margin-top: 4px; padding: 0 2px; overflow: hidden; }
-        .event-badge { font-size: 9px; color: #ffffff; background-color: #5c36cc; padding: 2px 4px; border-radius: 4px; text-align: center; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; width: 100%; }
+        .event-container { display: flex; justify-content: center; gap: 3px; margin-top: 5px; flex-wrap: wrap; }
+        .event-dot { width: 6px; height: 6px; background-color: #5c36cc; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        .day.has-event { cursor: pointer; }
+
+        /* 모달 */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; justify-content: center; align-items: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: #ffffff; border-radius: 20px; padding: 24px 20px; width: 300px; max-width: 90vw; box-shadow: 0 16px 48px rgba(0,0,0,0.18); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-title { font-size: 15px; font-weight: 700; color: #212529; }
+        .modal-close { background: #f1f3f5; border: none; width: 30px; height: 30px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #495057; }
+        .modal-item { padding: 10px 12px; background: #f3f0ff; border-radius: 10px; font-size: 13px; font-weight: 600; color: #3b1fa8; margin-bottom: 8px; }
+        .modal-item:last-child { margin-bottom: 0; }
+        .modal-item-content { font-size: 12px; color: #6b56c0; margin-top: 4px; font-weight: 400; }
     </style>
 </head>
 <body>
 
+<!-- 일정 모달 -->
+<div class="modal-overlay" id="scheduleModal" onclick="closeModal(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title" id="modalTitle">📅 일정</div>
+            <button class="modal-close" onclick="closeModalDirect()">✕</button>
+        </div>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
 <div class="dashboard-container">
     <div class="header-section">
-        <h1 class="header-title">📂 통합 정보 관리소</h1>
+        <h1 class="header-title">📂 기록 저장 공간</h1>
         <div class="tab-menu">
             <div class="tab-item active" onclick="switchTab(0)">민원 관리</div>
             <div class="tab-item" onclick="switchTab(1)">메모 & 공부 내용</div>
@@ -73,6 +96,7 @@
         </div>
     </div>
 
+    <!-- 민원 관리 패널 -->
     <div class="content-panel active" id="panel-0">
         <div class="card">
             <div class="form-group">
@@ -94,6 +118,7 @@
         </div>
     </div>
 
+    <!-- 메모 & 공부 내용 패널 -->
     <div class="content-panel" id="panel-1">
         <div class="card">
             <div class="form-group">
@@ -113,6 +138,7 @@
         </div>
     </div>
 
+    <!-- 일정 관리 패널 -->
     <div class="content-panel" id="panel-2">
         <div class="card" style="padding: 16px 12px; margin-bottom: 20px;">
             <div class="calendar-header">
@@ -137,6 +163,7 @@
             <div class="form-group">
                 <input type="date" class="form-input" id="schedule-date">
                 <input type="text" class="form-input" id="schedule-title" placeholder="일정 제목">
+                <textarea class="form-textarea" id="schedule-content" placeholder="일정 내용 (선택)" style="height: 80px;"></textarea>
                 <button class="btn-submit" onclick="submitSchedule()" style="background-color: #5c36cc;">일정 등록</button>
             </div>
         </div>
@@ -146,6 +173,7 @@
 <script>
     let sb = null;
 
+    // ─── 초기화 ───────────────────────────────────────────────────────────────
     function startConnection() {
         if (typeof supabase !== 'undefined' && window.SB_URL && window.SB_KEY) {
             sb = supabase.createClient(window.SB_URL, window.SB_KEY);
@@ -161,12 +189,13 @@
         loadSchedules();
     }
 
+    // ─── 탭 전환 ──────────────────────────────────────────────────────────────
     function switchTab(index) {
         document.querySelectorAll('.tab-item').forEach((tab, i) => tab.classList.toggle('active', i === index));
         document.querySelectorAll('.content-panel').forEach((panel, i) => panel.classList.toggle('active', i === index));
     }
 
-    // 민원 로직
+    // ─── 민원 ─────────────────────────────────────────────────────────────────
     async function loadComplaints() {
         const target = document.getElementById('complaint-list-target');
         if (!sb) return;
@@ -177,7 +206,7 @@
         }
         let html = '';
         data.forEach(item => {
-            let replyHtml = item.reply ? `<div class="item-sub" style="color:#e64980; font-weight:700;">답변: ${item.reply}</div>` : '';
+            const replyHtml = item.reply ? `<div class="item-sub" style="color:#e64980; font-weight:700;">답변: ${item.reply}</div>` : '';
             html += `<li class="data-item">
                 <button class="btn-delete-item" onclick="deleteComplaint(${item.id})">삭제</button>
                 <div style="font-weight:700; color:#1a62e7; padding-right:40px;">📌 [${item.region}] ${item.title}</div>
@@ -189,31 +218,29 @@
     }
 
     async function submitComplaint() {
-        const region = document.getElementById('complaint-region').value;
-        const title = document.getElementById('complaint-title').value;
+        const region  = document.getElementById('complaint-region').value;
+        const title   = document.getElementById('complaint-title').value;
         const content = document.getElementById('complaint-content').value;
-        const reply = document.getElementById('complaint-reply').value;
-        if(!title || !content) return alert('내용을 입력하세요.');
-
+        const reply   = document.getElementById('complaint-reply').value;
+        if (!title || !content) return alert('내용을 입력하세요.');
         const { error } = await sb.from('complaints').insert([{ id: Date.now(), region, title, content, reply }]);
-        if(error) return alert('등록 실패: ' + error.message);
-        
+        if (error) return alert('등록 실패: ' + error.message);
         alert('등록 완료');
-        document.getElementById('complaint-title').value = '';
+        document.getElementById('complaint-title').value   = '';
         document.getElementById('complaint-content').value = '';
-        document.getElementById('complaint-reply').value = '';
+        document.getElementById('complaint-reply').value   = '';
         loadComplaints();
     }
 
     async function deleteComplaint(id) {
-        if(!confirm('정말 삭제하시겠습니까?')) return;
+        if (!confirm('정말 삭제하시겠습니까?')) return;
         const { error } = await sb.from('complaints').delete().eq('id', id);
-        if(error) return alert('삭제 실패: ' + error.message);
+        if (error) return alert('삭제 실패: ' + error.message);
         alert('삭제되었습니다.');
         loadComplaints();
     }
 
-    // 메모 로직
+    // ─── 메모 ─────────────────────────────────────────────────────────────────
     async function loadMemos() {
         const target = document.getElementById('memo-list-target');
         if (!sb) return;
@@ -235,51 +262,50 @@
     }
 
     async function submitMemo() {
-        const category = document.getElementById('memo-category').value;
+        const category  = document.getElementById('memo-category').value;
         const memo_date = document.getElementById('memo-date').value;
-        const title = document.getElementById('memo-title').value;
-        const content = document.getElementById('memo-content').value;
-        if(!memo_date || !title || !content) return alert('모두 입력하세요.');
-
+        const title     = document.getElementById('memo-title').value;
+        const content   = document.getElementById('memo-content').value;
+        if (!memo_date || !title || !content) return alert('모두 입력하세요.');
         const { error } = await sb.from('memos').insert([{ id: Date.now(), category, memo_date, title, content }]);
-        if(error) return alert('등록 실패: ' + error.message);
-
+        if (error) return alert('등록 실패: ' + error.message);
         alert('저장 완료');
-        document.getElementById('memo-title').value = '';
+        document.getElementById('memo-title').value   = '';
         document.getElementById('memo-content').value = '';
         loadMemos();
     }
 
     async function deleteMemo(id) {
-        if(!confirm('정말 삭제하시겠습니까?')) return;
+        if (!confirm('정말 삭제하시겠습니까?')) return;
         const { error } = await sb.from('memos').delete().eq('id', id);
-        if(error) return alert('삭제 실패: ' + error.message);
+        if (error) return alert('삭제 실패: ' + error.message);
         alert('삭제되었습니다.');
         loadMemos();
     }
 
-    // 일정 로직
-    let currentViewingYear = 2026;
-    let currentViewingMonth = 6; 
+    // ─── 일정 ─────────────────────────────────────────────────────────────────
+    let currentViewingYear  = 2026;
+    let currentViewingMonth = 6;
 
     async function loadSchedules() {
-        const listContainer = document.getElementById("importantScheduleList");
-        const countBadge = document.getElementById("importantCount");
-        const gridTarget = document.getElementById("calendar-grid-target");
+        const listContainer = document.getElementById('importantScheduleList');
+        const countBadge    = document.getElementById('importantCount');
+        const gridTarget    = document.getElementById('calendar-grid-target');
         if (!sb) return;
 
-        document.getElementById("calendarYearMonth").innerText = `${currentViewingYear}년 ${currentViewingMonth}월`;
+        document.getElementById('calendarYearMonth').innerText = `${currentViewingYear}년 ${currentViewingMonth}월`;
+
         const lastDayOfCurrentMonth = new Date(currentViewingYear, currentViewingMonth, 0).getDate();
-        const startDayOfWeek = new Date(currentViewingYear, currentViewingMonth - 1, 1).getDay();
-        const lastDayOfPrevMonth = new Date(currentViewingYear, currentViewingMonth - 1, 0).getDate();
+        const startDayOfWeek        = new Date(currentViewingYear, currentViewingMonth - 1, 1).getDay();
+        const lastDayOfPrevMonth    = new Date(currentViewingYear, currentViewingMonth - 1, 0).getDate();
 
         const startDate = `${currentViewingYear}-${String(currentViewingMonth).padStart(2, '0')}-01`;
-        const endDate = `${currentViewingYear}-${String(currentViewingMonth).padStart(2, '0')}-${String(lastDayOfCurrentMonth).padStart(2, '0')}`;
+        const endDate   = `${currentViewingYear}-${String(currentViewingMonth).padStart(2, '0')}-${String(lastDayOfCurrentMonth).padStart(2, '0')}`;
 
         const { data, error } = await sb.from('schedules').select('*').gte('schedule_date', startDate).lte('schedule_date', endDate).order('schedule_date', { ascending: true });
 
         if (error || !data || data.length === 0) {
-            countBadge.innerText = '총 0건';
+            countBadge.innerText    = '총 0건';
             listContainer.innerHTML = '<div style="text-align:center; color:#868e96; font-size:12px; padding:10px 0;">일정이 없습니다.</div>';
         } else {
             countBadge.innerText = `총 ${data.length}건`;
@@ -301,56 +327,84 @@
         for (let i = startDayOfWeek - 1; i >= 0; i--) gridHtml += `<div class="day other-month">${lastDayOfPrevMonth - i}일</div>`;
         for (let d = 1; d <= lastDayOfCurrentMonth; d++) {
             const currentFormatDate = `${currentViewingYear}-${String(currentViewingMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            let badgeHtml = '<div class="event-container">';
-            if (data) {
-                data.forEach(ev => { if (ev.schedule_date === currentFormatDate) badgeHtml += `<div class="event-badge">${ev.title}</div>`; });
+            const dayEvents = data ? data.filter(ev => ev.schedule_date === currentFormatDate) : [];
+            if (dayEvents.length > 0) {
+                const dots       = dayEvents.map(() => `<div class="event-dot"></div>`).join('');
+                const eventsJson = JSON.stringify(dayEvents.map(ev => ({ title: ev.title, content: ev.content || '' }))).replace(/"/g, '&quot;');
+                gridHtml += `<div class="day has-event" onclick="openModal('${currentFormatDate}', '${eventsJson}')">
+                    ${d}일
+                    <div class="event-container">${dots}</div>
+                </div>`;
+            } else {
+                gridHtml += `<div class="day">${d}일</div>`;
             }
-            badgeHtml += '</div>';
-            gridHtml += `<div class="day">${d}일 ${badgeHtml}</div>`;
         }
         const remainingCells = (7 - ((startDayOfWeek + lastDayOfCurrentMonth) % 7)) % 7;
         for (let nextD = 1; nextD <= remainingCells; nextD++) gridHtml += `<div class="day other-month">${nextD}일</div>`;
         gridTarget.innerHTML = gridHtml;
     }
 
+    // ─── 모달 ─────────────────────────────────────────────────────────────────
+    function openModal(dateStr, eventsJson) {
+        const events = JSON.parse(eventsJson.replace(/&quot;/g, '"'));
+        const parts  = dateStr.split('-');
+        document.getElementById('modalTitle').innerText = `📅 ${parts[1]}월 ${parts[2]}일 일정`;
+        document.getElementById('modalBody').innerHTML  = events.map(ev => `
+            <div class="modal-item">
+                <div>• ${ev.title}</div>
+                ${ev.content ? `<div class="modal-item-content">${ev.content}</div>` : ''}
+            </div>
+        `).join('');
+        document.getElementById('scheduleModal').classList.add('open');
+    }
+
+    function closeModal(e) {
+        if (e.target === document.getElementById('scheduleModal')) closeModalDirect();
+    }
+
+    function closeModalDirect() {
+        document.getElementById('scheduleModal').classList.remove('open');
+    }
+
     async function submitSchedule() {
         const schedule_date = document.getElementById('schedule-date').value;
-        const title = document.getElementById('schedule-title').value;
-        if(!schedule_date || !title) return alert('날짜와 제목을 입력하세요.');
-
-        const { error } = await sb.from('schedules').insert([{ id: Date.now(), schedule_date, title }]);
-        if(error) return alert('등록 실패: ' + error.message);
-
+        const title         = document.getElementById('schedule-title').value;
+        const content       = document.getElementById('schedule-content').value;
+        if (!schedule_date || !title) return alert('날짜와 제목을 입력하세요.');
+        const { error } = await sb.from('schedules').insert([{ id: Date.now(), schedule_date, title, content }]);
+        if (error) return alert('등록 실패: ' + error.message);
         alert('등록 완료');
-        document.getElementById('schedule-title').value = '';
+        document.getElementById('schedule-title').value   = '';
+        document.getElementById('schedule-content').value = '';
         loadSchedules();
     }
 
     async function deleteSchedule(id) {
-        if(!confirm('정말 삭제하시겠습니까?')) return;
+        if (!confirm('정말 삭제하시겠습니까?')) return;
         const { error } = await sb.from('schedules').delete().eq('id', id);
-        if(error) return alert('삭제 실패: ' + error.message);
+        if (error) return alert('삭제 실패: ' + error.message);
         alert('삭제되었습니다.');
         loadSchedules();
     }
 
     function changeMonth(dir) {
         currentViewingMonth += dir;
-        if(currentViewingMonth > 12) { currentViewingMonth = 1; currentViewingYear++; }
-        else if(currentViewingMonth < 1) { currentViewingMonth = 12; currentViewingYear--; }
+        if (currentViewingMonth > 12) { currentViewingMonth = 1; currentViewingYear++; }
+        else if (currentViewingMonth < 1) { currentViewingMonth = 12; currentViewingYear--; }
         loadSchedules();
     }
 
     function goToday() {
         const today = new Date();
-        currentViewingYear = today.getFullYear();
+        currentViewingYear  = today.getFullYear();
         currentViewingMonth = today.getMonth() + 1;
         loadSchedules();
     }
 
+    // ─── DOMContentLoaded ─────────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
         const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('memo-date').value = todayStr;
+        document.getElementById('memo-date').value     = todayStr;
         document.getElementById('schedule-date').value = todayStr;
         startConnection();
     });
