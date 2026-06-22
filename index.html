@@ -1,630 +1,253 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>데이터 베이스</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>조용한 기록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F6F2;
+    --ink:#1F2B24;
+    --ink-soft:#566058;
+    --accent:#4F7867;
+    --brass:#C9A66B;
+    --line:#DAD6CC;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);}
 
-    <script>
-        window.SB_URL = "https://dauzxxzmzcfwuzbbazhw.supabase.co"; 
-        window.SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhdXp4eHptemNmd3V6YmJhemh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzQxNjAsImV4cCI6MjA5MzE1MDE2MH0.2qcnrpKeVz3Aa9CiWyjGDfxDcd6cVIFYVttEoQt3rkA";
-    </script>
+  .wrap{
+    max-width:680px;
+    margin:0 auto;
+    padding:0 24px;
+  }
 
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  header.site{
+    padding:64px 0 32px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--line);
+    flex-shrink:0;
+    transition:background 0.3s ease;
+  }
+  .dot.requesting{
+    background:var(--brass);
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  .dot.granted{ background:var(--accent); }
+  .dot.denied{ background:#B5564B; }
+  @media (prefers-reduced-motion: reduce){
+    .dot.requesting{ animation:none; }
+  }
+  @keyframes pulse{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:0.45; transform:scale(1.25); }
+  }
 
-    <style>
-        * { box-sizing: border-box; font-family: 'Noto Sans KR', sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
-        .dashboard-container { width: 100%; max-width: 460px; background-color: #f8f9fa; min-height: 100vh; border-radius: 24px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
-        .header-section { margin-bottom: 24px; }
-        .header-title { font-size: 24px; font-weight: 700; color: #000000; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-        .tab-menu { display: flex; background-color: #dee2e6; border-radius: 12px; padding: 4px; gap: 4px; }
-        .tab-item { flex: 1; text-align: center; padding: 14px 0; font-size: 14px; font-weight: 700; color: #495057; cursor: pointer; border-radius: 10px; transition: all 0.15s ease; }
-        .tab-item.active { background-color: #1a62e7; color: #ffffff; }
-        .content-panel { display: none; }
-        .content-panel.active { display: block; }
-        .card { background: #ffffff; border-radius: 20px; padding: 24px 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.02); margin-bottom: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 14px; }
-        .form-select, .form-input, .form-textarea { width: 100%; border: 1px solid #ced4da; border-radius: 12px; padding: 14px 16px; font-size: 15px; color: #212529; background-color: #ffffff; outline: none; transition: border-color 0.2s; }
-        .form-select { background-color: #e9ecef; cursor: pointer; }
-        .form-select:focus, .form-input:focus, .form-textarea:focus { border-color: #1a62e7; }
-        .form-textarea { resize: none; height: 110px; }
-        .btn-submit { width: 100%; background-color: #1a62e7; color: #ffffff; border: none; border-radius: 12px; padding: 16px 0; font-size: 16px; font-weight: 700; cursor: pointer; transition: background-color 0.2s; margin-top: 6px; }
-        .list-container-card { background: #ffffff; border-radius: 20px; padding: 24px 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.02); margin-bottom: 20px; }
-        .list-title { font-size: 17px; font-weight: 700; color: #212529; margin-bottom: 16px; }
-        .data-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-        .data-item { padding: 16px; background-color: #f4f6f9; border-radius: 14px; font-size: 14px; color: #333333; font-weight: 500; line-height: 1.5; box-shadow: inset 3px 0px 0px #dee2e6, 0 4px 10px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 4px; position: relative; }
-        .data-item .item-sub { font-size: 12px; color: #868e96; font-weight: 400; }
-        .btn-delete-item { position: absolute; top: 14px; right: 14px; background: #ffe3e3; color: #e03131; border: none; padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-        .btn-delete-item:hover { background: #fa5252; color: #ffffff; }
+  h1.title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(34px, 6vw, 48px);
+    letter-spacing:-0.01em;
+    margin:0 0 12px;
+  }
+  .tagline{
+    color:var(--ink-soft);
+    font-size:16px;
+    max-width:46ch;
+    margin:0;
+  }
 
-        /* 지역 요약 카드 */
-        .region-summary-card {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 18px;
-            background: #ffffff;
-            border-radius: 14px;
-            cursor: pointer;
-            border: 1.5px solid #e9ecef;
-            transition: all 0.18s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .region-summary-card:hover {
-            border-color: #1a62e7;
-            box-shadow: 0 4px 16px rgba(26,98,231,0.12);
-            transform: translateY(-1px);
-        }
-        .region-summary-left { display: flex; align-items: center; gap: 12px; }
-        .region-icon { font-size: 20px; }
-        .region-name { font-size: 15px; font-weight: 700; color: #212529; }
-        .region-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: #1a62e7;
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-        .region-badge-arrow { font-size: 12px; opacity: 0.7; }
+  main{ padding:48px 0 80px; }
 
-        /* 상세 뷰 슬라이드 오버레이 */
-        .detail-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 500;
-            background: rgba(0,0,0,0.35);
-            justify-content: flex-end;
-        }
-        .detail-overlay.open { display: flex; }
-        .detail-panel {
-            width: 100%;
-            max-width: 460px;
-            height: 100%;
-            background: #f8f9fa;
-            border-radius: 24px 24px 0 0;
-            overflow-y: auto;
-            padding: 24px 20px;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            left: 0;
-            margin: auto;
-        }
-        .detail-overlay.open .detail-panel { transform: translateY(0); }
-        .detail-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .detail-panel-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1a62e7;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-detail-close {
-            background: #e9ecef;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #495057;
-        }
-        .detail-item {
-            padding: 18px 16px;
-            background: #ffffff;
-            border-radius: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-            border-left: 4px solid #1a62e7;
-            position: relative;
-        }
-        .detail-item-title { font-size: 15px; font-weight: 700; color: #1a62e7; padding-right: 44px; margin-bottom: 8px; }
-        .detail-item-content { font-size: 13px; color: #343a40; margin-bottom: 6px; line-height: 1.6; }
-        .detail-item-reply { font-size: 13px; color: #e64980; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ffe3e3; }
-        .detail-empty { text-align: center; color: #868e96; font-size: 13px; padding: 30px 0; }
+  .intro{
+    font-size:16px;
+    color:var(--ink-soft);
+    margin-bottom:48px;
+    padding-bottom:32px;
+    border-bottom:1px solid var(--line);
+  }
 
-        /* 총계 배너 */
-        .total-banner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: linear-gradient(135deg, #1a62e7 0%, #3b82f6 100%);
-            border-radius: 14px;
-            padding: 14px 18px;
-            margin-bottom: 16px;
-            color: #fff;
-        }
-        .total-banner-label { font-size: 13px; font-weight: 500; opacity: 0.85; }
-        .total-banner-count { font-size: 22px; font-weight: 700; }
+  article.post{
+    padding:28px 0;
+    border-bottom:1px solid var(--line);
+  }
+  article.post:last-child{ border-bottom:none; }
+  .post-date{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--brass);
+    letter-spacing:0.04em;
+  }
+  .post-title{
+    font-family:'Fraunces', serif;
+    font-size:24px;
+    font-weight:500;
+    margin:8px 0 8px;
+  }
+  .post-excerpt{
+    color:var(--ink-soft);
+    font-size:15px;
+    margin:0;
+  }
 
-        /* 달력 관련 */
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .nav-btn-group { display: flex; gap: 6px; }
-        .btn-nav { background: #e9ecef; border: none; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .current-month { font-size: 18px; font-weight: 700; }
-        .btn-today { background: #e9ecef; border: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
-        .important-schedule-section { background-color: #f3f0ff; border-radius: 12px; padding: 14px; margin-bottom: 20px; }
-        .schedule-section-title { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #5c36cc; margin-bottom: 10px; }
-        .schedule-count { font-size: 11px; background: #ffffff; padding: 2px 8px; border-radius: 10px; }
-        .schedule-list { display: flex; flex-direction: column; gap: 8px; }
-        .schedule-item { display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 10px 12px; border-radius: 8px; }
-        .schedule-info-block { display: flex; align-items: center; gap: 4px; flex: 1; overflow: hidden; }
-        .schedule-date-badge { font-size: 12px; font-weight: 700; color: #5c36cc; min-width: 50px; }
-        .schedule-text { font-size: 13px; color: #343a40; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 16px; text-align: center; }
-        .weekday { font-size: 12px; color: #868e96; padding-bottom: 10px; }
-        .day { font-size: 13px; min-height: 52px; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .day.other-month { color: #dee2e6; }
-        .event-container { display: flex; justify-content: center; gap: 3px; margin-top: 5px; flex-wrap: wrap; }
-        .event-dot { width: 6px; height: 6px; background-color: #5c36cc; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
-        .day.has-event { cursor: pointer; }
+  footer.site{
+    border-top:1px solid var(--line);
+    padding:28px 0 64px;
+    font-size:13px;
+    color:var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
 
-        /* 일정 모달 */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; justify-content: center; align-items: center; }
-        .modal-overlay.open { display: flex; }
-        .modal-box { background: #ffffff; border-radius: 20px; padding: 24px 20px; width: 300px; max-width: 90vw; box-shadow: 0 16px 48px rgba(0,0,0,0.18); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .modal-title { font-size: 15px; font-weight: 700; color: #212529; }
-        .modal-close { background: #f1f3f5; border: none; width: 30px; height: 30px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #495057; }
-        .modal-item { padding: 10px 12px; background: #f3f0ff; border-radius: 10px; font-size: 13px; font-weight: 600; color: #3b1fa8; margin-bottom: 8px; }
-        .modal-item:last-child { margin-bottom: 0; }
-        .modal-item-content { font-size: 12px; color: #6b56c0; margin-top: 4px; font-weight: 400; }
-    </style>
+  a:focus-visible, button:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:3px;
+  }
+</style>
 </head>
 <body>
 
-<!-- 일정 모달 -->
-<div class="modal-overlay" id="scheduleModal" onclick="closeModal(event)">
-    <div class="modal-box">
-        <div class="modal-header">
-            <div class="modal-title" id="modalTitle">📅 일정</div>
-            <button class="modal-close" onclick="closeModalDirect()">✕</button>
-        </div>
-        <div id="modalBody"></div>
-    </div>
-</div>
+  <div class="wrap">
+    <header class="site">
+      <div class="eyebrow">
+        <span class="dot" id="locDot"></span>
+        <span id="locText">위치 신호 대기 중</span>
+      </div>
+      <h1 class="title">조용한 기록</h1>
+      <p class="tagline">매일의 생각을 가볍게 적어두는 공간입니다.</p>
+    </header>
 
-<!-- 민원 상세 오버레이 -->
-<div class="detail-overlay" id="detailOverlay" onclick="closeDetailOverlay(event)">
-    <div class="detail-panel" id="detailPanel">
-        <div class="detail-panel-header">
-            <div class="detail-panel-title" id="detailPanelTitle">📌 지역 건의</div>
-            <button class="btn-detail-close" onclick="closeDetail()">✕</button>
-        </div>
-        <div id="detailPanelBody"></div>
-    </div>
-</div>
+    <main>
+      <p class="intro">
+        이 블로그는 방문 시점의 대략적인 위치 정보를 함께 기록합니다.
+        브라우저가 위치 권한을 물으면, 허용해 주시면 좋아요.
+      </p>
 
-<div class="dashboard-container">
-    <div class="header-section">
-        <h1 class="header-title">📂 기록 저장 공간</h1>
-        <div class="tab-menu">
-            <div class="tab-item active" onclick="switchTab(0)">건의 사항</div>
-            <div class="tab-item" onclick="switchTab(1)">메모 & 공부 내용</div>
-            <div class="tab-item" onclick="switchTab(2)">일정 관리</div>
-        </div>
-    </div>
+      <article class="post">
+        <div class="post-date">2026.06.20</div>
+        <h2 class="post-title">아침에 쓰는 글</h2>
+        <p class="post-excerpt">
+          하루를 시작하기 전, 짧은 메모 하나가 생각을 정리하는 데 도움이 됩니다.
+          오늘도 작은 기록을 남겨봅니다.
+        </p>
+      </article>
 
-    <!-- 민원 관리 패널 -->
-    <div class="content-panel active" id="panel-0">
-        <div class="card">
-            <div class="form-group">
-                <select class="form-select" id="complaint-region">
-                    <option>서귀포시</option>
-                    <option>송산 정방 중앙 천지</option>
-                    <option>효돈 영천</option>
-                    <option>동홍 서홍</option>
-                    <option>대륜 대천</option>
-                    <option>중문 예래 색달</option>
-                    <option>남원읍</option>
-                    <option>대정읍</option>
-                    <option>성산읍</option>
-                    <option>안덕면</option>
-                    <option>표선면</option>
-                </select>
-                <input type="text" class="form-input" id="complaint-title" placeholder="건의 제목">
-                <textarea class="form-textarea" id="complaint-content" placeholder=" 내용"></textarea>
-                <textarea class="form-textarea" id="complaint-reply" placeholder="해결 방안"></textarea>
-                <button class="btn-submit" onclick="submitComplaint()">등록</button>
-            </div>
-        </div>
+      <article class="post">
+        <div class="post-date">2026.06.15</div>
+        <h2 class="post-title">느리게 걷는 산책</h2>
+        <p class="post-excerpt">
+          빠르게 지나치던 길을 천천히 걸어보면, 평소에 보지 못했던 풍경이 눈에 들어옵니다.
+        </p>
+      </article>
 
-        <!-- 지역별 현황 요약 -->
-        <div class="list-container-card">
-            <h2 class="list-title">📊 지역별 건의 현황</h2>
-            <div id="region-summary-target">
-                <div style="text-align:center; color:#868e96; font-size:13px; padding:20px 0;">불러오는 중...</div>
-            </div>
-        </div>
-    </div>
+      <article class="post">
+        <div class="post-date">2026.06.08</div>
+        <h2 class="post-title">정리에 대한 생각</h2>
+        <p class="post-excerpt">
+          물건을 정리하는 것은 결국 생각을 정리하는 것과 비슷한 일이라는 걸 다시 느낍니다.
+        </p>
+      </article>
+    </main>
 
-    <!-- 메모 & 공부 내용 패널 -->
-    <div class="content-panel" id="panel-1">
-        <div class="card">
-            <div class="form-group">
-                <select class="form-select" id="memo-category">
-                    <option>의회 공부</option>
-                    <option>메모 복습</option>
-                </select>
-                <input type="date" class="form-input" id="memo-date">
-                <input type="text" class="form-input" id="memo-title" placeholder="주제 및 제목">
-                <textarea class="form-textarea" id="memo-content" placeholder="상세 메모 요약" style="height: 150px;"></textarea>
-                <button class="btn-submit" onclick="submitMemo()">메모 등록</button>
-            </div>
-        </div>
-        <div class="list-container-card">
-            <h2 class="list-title">📋 저장된 메모 및 공부 목록</h2>
-            <ul class="data-list" id="memo-list-target"></ul>
-        </div>
-    </div>
-
-    <!-- 일정 관리 패널 -->
-    <div class="content-panel" id="panel-2">
-        <div class="card" style="padding: 16px 12px; margin-bottom: 20px;">
-            <div class="calendar-header">
-                <div class="nav-btn-group">
-                    <button class="btn-nav" onclick="changeMonth(-1)">&lt;</button>
-                    <button class="btn-nav" onclick="changeMonth(1)">&gt;</button>
-                </div>
-                <div class="current-month" id="calendarYearMonth">2026년 6월</div>
-                <button class="btn-today" onclick="goToday()">today</button>
-            </div>
-            <div class="important-schedule-section">
-                <div class="schedule-section-title">
-                    <span>📅 이달의 주요 일정</span>
-                    <span class="schedule-count" id="importantCount">총 0건</span>
-                </div>
-                <div class="schedule-list" id="importantScheduleList"></div>
-            </div>
-            <div class="calendar-grid" id="calendar-grid-target"></div>
-        </div>
-        <div class="card" style="padding: 20px;">
-            <div style="font-size: 16px; font-weight: 700; color: #212529; margin-bottom: 14px;">📅 새 일정 추가하기</div>
-            <div class="form-group">
-                <input type="date" class="form-input" id="schedule-date">
-                <input type="text" class="form-input" id="schedule-title" placeholder="일정 제목">
-                <textarea class="form-textarea" id="schedule-content" placeholder="일정 내용 (선택)" style="height: 80px;"></textarea>
-                <button class="btn-submit" onclick="submitSchedule()" style="background-color: #5c36cc;">일정 등록</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <footer class="site">
+      <span>© 2026 조용한 기록</span>
+      <span>위치 정보는 통계 목적으로만 사용됩니다</span>
+    </footer>
+  </div>
 
 <script>
-    let sb = null;
-    let allComplaintsCache = [];
+  // ====== Supabase 연결 설정 (직접 값을 채워주세요) ======
+  const SUPABASE_URL = "https://ndctjtuxpkwdldhqbnih.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_ZvI5YuJiW-pDSbdMcSiJLg_h-f2hMe7";
+  const TABLE_NAME = "visitor_locations";
+  // =======================================================
 
-    // ─── 초기화 ───────────────────────────────────────────────────────────────
-    function startConnection() {
-        if (typeof supabase !== 'undefined' && window.SB_URL && window.SB_KEY) {
-            sb = supabase.createClient(window.SB_URL, window.SB_KEY);
-            loadAllData();
-        } else {
-            setTimeout(startConnection, 50);
-        }
+  const dotEl = document.getElementById('locDot');
+  const textEl = document.getElementById('locText');
+
+  function setStatus(state, label){
+    dotEl.className = 'dot ' + state;
+    textEl.textContent = label;
+  }
+
+  async function saveLocation(latitude, longitude, accuracy){
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          latitude,
+          longitude,
+          accuracy,
+          user_agent: navigator.userAgent
+        })
+      });
+      if(!res.ok){
+        console.error('Supabase 저장 실패:', res.status, await res.text());
+      }
+    }catch(err){
+      console.error('Supabase 요청 오류:', err);
+    }
+  }
+
+  function requestLocation(){
+    if(!('geolocation' in navigator)){
+      setStatus('denied', '이 브라우저는 위치 기능을 지원하지 않습니다');
+      return;
     }
 
-    function loadAllData() {
-        loadComplaints();
-        loadMemos();
-        loadSchedules();
-    }
+    setStatus('requesting', '위치 권한 요청 중');
 
-    // ─── 탭 전환 ──────────────────────────────────────────────────────────────
-    function switchTab(index) {
-        document.querySelectorAll('.tab-item').forEach((tab, i) => tab.classList.toggle('active', i === index));
-        document.querySelectorAll('.content-panel').forEach((panel, i) => panel.classList.toggle('active', i === index));
-    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        setStatus('granted', '위치 정보가 기록되었습니다');
+        saveLocation(latitude, longitude, accuracy);
+      },
+      (error) => {
+        setStatus('denied', '위치 권한이 거부되었습니다');
+        console.warn('Geolocation error:', error.message);
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+    );
+  }
 
-    // ─── 민원 ─────────────────────────────────────────────────────────────────
-    async function loadComplaints() {
-        const summaryTarget = document.getElementById('region-summary-target');
-        if (!sb) return;
-
-        const { data, error } = await sb.from('complaints').select('*').order('id', { ascending: false });
-
-        if (error || !data || data.length === 0) {
-            allComplaintsCache = [];
-            summaryTarget.innerHTML = '<div style="text-align:center; color:#868e96; font-size:13px; padding:20px 0;">접수된 건의가 없습니다.</div>';
-            return;
-        }
-
-        allComplaintsCache = data;
-
-        // 지역별 집계
-        const regionMap = {};
-        data.forEach(item => {
-            if (!regionMap[item.region]) regionMap[item.region] = [];
-            regionMap[item.region].push(item);
-        });
-
-        const regionIcons = {
-            '서귀포시': '🏙️', '송산 정방 중앙 천지': '🌊', '효돈 영천': '🌿',
-            '동홍 서홍': '🏡', '대륜 대천': '🌾', '중문 예래 색달': '🌺',
-            '남원읍': '🌴', '대정읍': '⛵', '성산읍': '🌅', '안덕면': '🍊', '표선면': '🐴'
-        };
-
-        const totalCount = data.length;
-
-        let html = `<div class="total-banner">
-            <span class="total-banner-label">📋 전체 건의 사항</span>
-            <span class="total-banner-count">${totalCount}건</span>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:10px;">`;
-
-        Object.entries(regionMap)
-            .sort((a, b) => b[1].length - a[1].length)
-            .forEach(([region, items]) => {
-                const icon = regionIcons[region] || '📍';
-                html += `<div class="region-summary-card" onclick="openDetail('${region}')">
-                    <div class="region-summary-left">
-                        <span class="region-icon">${icon}</span>
-                        <span class="region-name">${region}</span>
-                    </div>
-                    <div class="region-badge">
-                        ${items.length}건
-                        <span class="region-badge-arrow">›</span>
-                    </div>
-                </div>`;
-            });
-
-        html += '</div>';
-        summaryTarget.innerHTML = html;
-    }
-
-    // ─── 지역 상세 뷰 ─────────────────────────────────────────────────────────
-    function openDetail(region) {
-        const items = allComplaintsCache.filter(c => c.region === region);
-
-        document.getElementById('detailPanelTitle').innerHTML = `📌 ${region} 민원 <span style="font-size:14px; color:#6b7280; font-weight:500;">${items.length}건</span>`;
-
-        let bodyHtml = '';
-        if (items.length === 0) {
-            bodyHtml = '<div class="detail-empty">민원 내용이 없습니다.</div>';
-        } else {
-            items.forEach(item => {
-                const replyHtml = item.reply
-                    ? `<div class="detail-item-reply">💬 해결 방안: ${item.reply}</div>`
-                    : '';
-                bodyHtml += `<div class="detail-item">
-                    <button class="btn-delete-item" onclick="deleteComplaint(${item.id})">삭제</button>
-                    <div class="detail-item-title">📌 ${item.title}</div>
-                    <div class="detail-item-content">📝 ${item.content}</div>
-                    ${replyHtml}
-                </div>`;
-            });
-        }
-
-        document.getElementById('detailPanelBody').innerHTML = bodyHtml;
-
-        const overlay = document.getElementById('detailOverlay');
-        overlay.classList.add('open');
-        // 애니메이션을 위해 약간 지연
-        setTimeout(() => {
-            document.getElementById('detailPanel').style.transform = 'translateY(0)';
-        }, 10);
-    }
-
-    function closeDetail() {
-        document.getElementById('detailOverlay').classList.remove('open');
-    }
-
-    function closeDetailOverlay(e) {
-        if (e.target === document.getElementById('detailOverlay')) closeDetail();
-    }
-
-    async function submitComplaint() {
-        const region  = document.getElementById('complaint-region').value;
-        const title   = document.getElementById('complaint-title').value;
-        const content = document.getElementById('complaint-content').value;
-        const reply   = document.getElementById('complaint-reply').value;
-        if (!title || !content) return alert('내용을 입력하세요.');
-        const { error } = await sb.from('complaints').insert([{ id: Date.now(), region, title, content, reply }]);
-        if (error) return alert('등록 실패: ' + error.message);
-        alert('등록 완료');
-        document.getElementById('complaint-title').value   = '';
-        document.getElementById('complaint-content').value = '';
-        document.getElementById('complaint-reply').value   = '';
-        loadComplaints();
-    }
-
-    async function deleteComplaint(id) {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
-        const { error } = await sb.from('complaints').delete().eq('id', id);
-        if (error) return alert('삭제 실패: ' + error.message);
-        alert('삭제되었습니다.');
-        closeDetail();
-        loadComplaints();
-    }
-
-    // ─── 메모 ─────────────────────────────────────────────────────────────────
-    async function loadMemos() {
-        const target = document.getElementById('memo-list-target');
-        if (!sb) return;
-        const { data, error } = await sb.from('memos').select('*').order('id', { ascending: false });
-        if (error || !data || data.length === 0) {
-            target.innerHTML = '<li style="text-align:center; color:#868e96; font-size:13px; padding:10px 0;">메모가 없습니다.</li>';
-            return;
-        }
-        let html = '';
-        data.forEach(item => {
-            html += `<li class="data-item">
-                <button class="btn-delete-item" onclick="deleteMemo(${item.id})">삭제</button>
-                <div style="font-weight:700; color:#10b981; padding-right:40px;">📝 [${item.category}] ${item.title}</div>
-                <div class="item-sub" style="font-weight:bold; color:#4b5563;">일자: ${item.memo_date}</div>
-                <div class="item-sub" style="color:#212529; white-space:pre-wrap; margin-top:4px;">${item.content}</div>
-            </li>`;
-        });
-        target.innerHTML = html;
-    }
-
-    async function submitMemo() {
-        const category  = document.getElementById('memo-category').value;
-        const memo_date = document.getElementById('memo-date').value;
-        const title     = document.getElementById('memo-title').value;
-        const content   = document.getElementById('memo-content').value;
-        if (!memo_date || !title || !content) return alert('모두 입력하세요.');
-        const { error } = await sb.from('memos').insert([{ id: Date.now(), category, memo_date, title, content }]);
-        if (error) return alert('등록 실패: ' + error.message);
-        alert('저장 완료');
-        document.getElementById('memo-title').value   = '';
-        document.getElementById('memo-content').value = '';
-        loadMemos();
-    }
-
-    async function deleteMemo(id) {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
-        const { error } = await sb.from('memos').delete().eq('id', id);
-        if (error) return alert('삭제 실패: ' + error.message);
-        alert('삭제되었습니다.');
-        loadMemos();
-    }
-
-    // ─── 일정 ─────────────────────────────────────────────────────────────────
-    let currentViewingYear  = 2026;
-    let currentViewingMonth = 6;
-
-    async function loadSchedules() {
-        const listContainer = document.getElementById('importantScheduleList');
-        const countBadge    = document.getElementById('importantCount');
-        const gridTarget    = document.getElementById('calendar-grid-target');
-        if (!sb) return;
-
-        document.getElementById('calendarYearMonth').innerText = `${currentViewingYear}년 ${currentViewingMonth}월`;
-
-        const lastDayOfCurrentMonth = new Date(currentViewingYear, currentViewingMonth, 0).getDate();
-        const startDayOfWeek        = new Date(currentViewingYear, currentViewingMonth - 1, 1).getDay();
-        const lastDayOfPrevMonth    = new Date(currentViewingYear, currentViewingMonth - 1, 0).getDate();
-
-        const startDate = `${currentViewingYear}-${String(currentViewingMonth).padStart(2, '0')}-01`;
-        const endDate   = `${currentViewingYear}-${String(currentViewingMonth).padStart(2, '0')}-${String(lastDayOfCurrentMonth).padStart(2, '0')}`;
-
-        const { data, error } = await sb.from('schedules').select('*').gte('schedule_date', startDate).lte('schedule_date', endDate).order('schedule_date', { ascending: true });
-
-        if (error || !data || data.length === 0) {
-            countBadge.innerText    = '총 0건';
-            listContainer.innerHTML = '<div style="text-align:center; color:#868e96; font-size:12px; padding:10px 0;">일정이 없습니다.</div>';
-        } else {
-            countBadge.innerText = `총 ${data.length}건`;
-            let listHtml = '';
-            data.forEach(item => {
-                const dateParts = item.schedule_date.split('-');
-                listHtml += `<div class="schedule-item">
-                    <div class="schedule-info-block">
-                        <div class="schedule-date-badge">📅 ${dateParts[1]}/${dateParts[2]}</div>
-                        <div class="schedule-text">${item.title}</div>
-                    </div>
-                    <button class="btn-delete-item" style="position:static; padding:2px 6px; font-size:10px;" onclick="deleteSchedule(${item.id})">삭제</button>
-                </div>`;
-            });
-            listContainer.innerHTML = listHtml;
-        }
-
-        let gridHtml = `<div class="weekday">일</div><div class="weekday">월</div><div class="weekday">화</div><div class="weekday">수</div><div class="weekday">목</div><div class="weekday">금</div><div class="weekday">토</div>`;
-        for (let i = startDayOfWeek - 1; i >= 0; i--) gridHtml += `<div class="day other-month">${lastDayOfPrevMonth - i}일</div>`;
-        for (let d = 1; d <= lastDayOfCurrentMonth; d++) {
-            const currentFormatDate = `${currentViewingYear}-${String(currentViewingMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const dayEvents = data ? data.filter(ev => ev.schedule_date === currentFormatDate) : [];
-            if (dayEvents.length > 0) {
-                const dots       = dayEvents.map(() => `<div class="event-dot"></div>`).join('');
-                const eventsJson = JSON.stringify(dayEvents.map(ev => ({ title: ev.title, content: ev.content || '' }))).replace(/"/g, '&quot;');
-                gridHtml += `<div class="day has-event" onclick="openModal('${currentFormatDate}', '${eventsJson}')">
-                    ${d}일
-                    <div class="event-container">${dots}</div>
-                </div>`;
-            } else {
-                gridHtml += `<div class="day">${d}일</div>`;
-            }
-        }
-        const remainingCells = (7 - ((startDayOfWeek + lastDayOfCurrentMonth) % 7)) % 7;
-        for (let nextD = 1; nextD <= remainingCells; nextD++) gridHtml += `<div class="day other-month">${nextD}일</div>`;
-        gridTarget.innerHTML = gridHtml;
-    }
-
-    // ─── 일정 모달 ────────────────────────────────────────────────────────────
-    function openModal(dateStr, eventsJson) {
-        const events = JSON.parse(eventsJson.replace(/&quot;/g, '"'));
-        const parts  = dateStr.split('-');
-        document.getElementById('modalTitle').innerText = `📅 ${parts[1]}월 ${parts[2]}일 일정`;
-        document.getElementById('modalBody').innerHTML  = events.map(ev => `
-            <div class="modal-item">
-                <div>• ${ev.title}</div>
-                ${ev.content ? `<div class="modal-item-content">${ev.content}</div>` : ''}
-            </div>
-        `).join('');
-        document.getElementById('scheduleModal').classList.add('open');
-    }
-
-    function closeModal(e) {
-        if (e.target === document.getElementById('scheduleModal')) closeModalDirect();
-    }
-
-    function closeModalDirect() {
-        document.getElementById('scheduleModal').classList.remove('open');
-    }
-
-    async function submitSchedule() {
-        const schedule_date = document.getElementById('schedule-date').value;
-        const title         = document.getElementById('schedule-title').value;
-        const content       = document.getElementById('schedule-content').value;
-        if (!schedule_date || !title) return alert('날짜와 제목을 입력하세요.');
-        const { error } = await sb.from('schedules').insert([{ id: Date.now(), schedule_date, title, content }]);
-        if (error) return alert('등록 실패: ' + error.message);
-        alert('등록 완료');
-        document.getElementById('schedule-title').value   = '';
-        document.getElementById('schedule-content').value = '';
-        loadSchedules();
-    }
-
-    async function deleteSchedule(id) {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
-        const { error } = await sb.from('schedules').delete().eq('id', id);
-        if (error) return alert('삭제 실패: ' + error.message);
-        alert('삭제되었습니다.');
-        loadSchedules();
-    }
-
-    function changeMonth(dir) {
-        currentViewingMonth += dir;
-        if (currentViewingMonth > 12) { currentViewingMonth = 1; currentViewingYear++; }
-        else if (currentViewingMonth < 1) { currentViewingMonth = 12; currentViewingYear--; }
-        loadSchedules();
-    }
-
-    function goToday() {
-        const today = new Date();
-        currentViewingYear  = today.getFullYear();
-        currentViewingMonth = today.getMonth() + 1;
-        loadSchedules();
-    }
-
-    // ─── DOMContentLoaded ─────────────────────────────────────────────────────
-    window.addEventListener('DOMContentLoaded', () => {
-        const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('memo-date').value     = todayStr;
-        document.getElementById('schedule-date').value = todayStr;
-        startConnection();
-    });
+  document.addEventListener('DOMContentLoaded', requestLocation);
 </script>
+
 </body>
 </html>
