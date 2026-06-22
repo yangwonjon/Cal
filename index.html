@@ -148,8 +148,6 @@
 
     <main>
       <p class="intro">
-        이 블로그는 방문 시점의 대략적인 위치 정보를 함께 기록합니다.
-        브라우저가 위치 권한을 물으면, 허용해 주시면 좋아요.
       </p>
 
       <article class="post">
@@ -224,29 +222,6 @@
     }
   }
 
-  function requestLocation(){
-    if(!('geolocation' in navigator)){
-      setStatus('denied', '이 브라우저는 위치 기능을 지원하지 않습니다');
-      return;
-    }
-
-    setStatus('requesting', '위치 권한 요청 중');
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        setStatus('granted', '위치 정보가 기록되었습니다');
-        saveLocation(latitude, longitude, accuracy);
-      },
-      (error) => {
-        setStatus('denied', '위치 권한이 거부되었습니다');
-        console.warn('Geolocation error:', error.message);
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-    );
-  }
-
-  document.addEventListener('DOMContentLoaded', requestLocation);
 </script>
 
 </body>
