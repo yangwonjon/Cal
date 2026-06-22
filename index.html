@@ -117,6 +117,50 @@
     margin:0;
   }
 
+  .cafe-section{
+    margin-bottom:48px;
+    padding-bottom:32px;
+    border-bottom:1px solid var(--line);
+  }
+  .cafe-heading{
+    font-family:'Fraunces', serif;
+    font-size:20px;
+    font-weight:500;
+    margin:0 0 16px;
+  }
+  .cafe-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .cafe-item{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:12px;
+  }
+  .cafe-name{
+    font-size:15px;
+    font-weight:500;
+  }
+  .cafe-dist{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .cafe-empty{
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+
   footer.site{
     border-top:1px solid var(--line);
     padding:28px 0 64px;
@@ -140,7 +184,7 @@
     <header class="site">
       <div class="eyebrow">
         <span class="dot" id="locDot"></span>
-        <span id="locText">위치 신호 대기 중</span>
+        <span id="locText">근처 카페 찾기 대기 중</span>
       </div>
       <h1 class="title">조용한 기록</h1>
       <p class="tagline">매일의 생각을 가볍게 적어두는 공간입니다.</p>
@@ -148,7 +192,15 @@
 
     <main>
       <p class="intro">
+        위치를 허용해 주시면 지금 계신 곳에서 가까운 카페를 찾아드려요.
       </p>
+
+      <section class="cafe-section">
+        <h2 class="cafe-heading">근처 카페</h2>
+        <ul class="cafe-list" id="cafeList">
+          <li class="cafe-empty" id="cafeEmpty">위치를 허용하면 목록이 나타나요.</li>
+        </ul>
+      </section>
 
       <article class="post">
         <div class="post-date">2026.06.20</div>
@@ -178,7 +230,7 @@
 
     <footer class="site">
       <span>© 2026 조용한 기록</span>
-      <span>위치 정보는 통계 목적으로만 사용됩니다</span>
+      <span>위치 정보는 카페 추천과 방문 통계에 사용됩니다</span>
     </footer>
   </div>
 
@@ -191,6 +243,59 @@
 
   const dotEl = document.getElementById('locDot');
   const textEl = document.getElementById('locText');
+
+  const cafeListEl = document.getElementById('cafeList');
+
+  function haversineMeters(lat1, lon1, lat2, lon2){
+    const R = 6371000;
+    const toRad = (d) => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function renderCafes(cafes, lat, lon){
+    cafeListEl.innerHTML = '';
+    if(cafes.length === 0){
+      const li = document.createElement('li');
+      li.className = 'cafe-empty';
+      li.textContent = '주변 1.5km 안에서 카페를 찾지 못했어요.';
+      cafeListEl.appendChild(li);
+      return;
+    }
+    cafes
+      .map(c => ({...c, dist: haversineMeters(lat, lon, c.lat, c.lon)}))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 6)
+      .forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'cafe-item';
+        const distLabel = c.dist < 1000 ? `${Math.round(c.dist)}m` : `${(c.dist/1000).toFixed(1)}km`;
+        li.innerHTML = `<span class="cafe-name">${c.name}</span><span class="cafe-dist">${distLabel}</span>`;
+        cafeListEl.appendChild(li);
+      });
+  }
+
+  async function fetchNearbyCafes(lat, lon){
+    const radius = 1500;
+    const query = `[out:json][timeout:10];node["amenity"="cafe"](around:${radius},${lat},${lon});out body 20;`;
+    try{
+      const res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: query
+      });
+      const data = await res.json();
+      const cafes = (data.elements || [])
+        .filter(el => el.tags && el.tags.name)
+        .map(el => ({ name: el.tags.name, lat: el.lat, lon: el.lon }));
+      renderCafes(cafes, lat, lon);
+    }catch(err){
+      console.error('카페 검색 오류:', err);
+      cafeListEl.innerHTML = '<li class="cafe-empty">카페 정보를 가져오지 못했어요. 잠시 후 다시 시도해 주세요.</li>';
+    }
+  }
 
   function setStatus(state, label){
     dotEl.className = 'dot ' + state;
@@ -222,6 +327,31 @@
     }
   }
 
+  function requestLocation(){
+    if(!('geolocation' in navigator)){
+      setStatus('denied', '이 브라우저는 위치 기능을 지원하지 않습니다');
+      return;
+    }
+
+    setStatus('requesting', '근처 카페 찾는 중');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        setStatus('granted', '근처 카페를 찾았어요');
+        fetchNearbyCafes(latitude, longitude);
+        saveLocation(latitude, longitude, accuracy);
+      },
+      (error) => {
+        setStatus('denied', '위치 권한이 거부되었습니다');
+        cafeListEl.innerHTML = '<li class="cafe-empty">위치를 허용하지 않으면 근처 카페를 찾을 수 없어요.</li>';
+        console.warn('Geolocation error:', error.message);
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+    );
+  }
+
+  document.addEventListener('DOMContentLoaded', requestLocation);
 </script>
 
 </body>
