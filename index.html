@@ -138,10 +138,47 @@
             border-left: 4px solid #1a62e7;
             position: relative;
         }
-        .detail-item-title { font-size: 15px; font-weight: 700; color: #1a62e7; padding-right: 44px; margin-bottom: 8px; }
+        .detail-item-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .detail-item-title { font-size: 15px; font-weight: 700; color: #1a62e7; }
         .detail-item-content { font-size: 13px; color: #343a40; margin-bottom: 6px; line-height: 1.6; }
         .detail-item-reply { font-size: 13px; color: #e64980; font-weight: 700; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ffe3e3; }
         .detail-empty { text-align: center; color: #868e96; font-size: 13px; padding: 30px 0; }
+
+        .detail-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .btn-action { border: none; padding: 4px 9px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+        .btn-action-edit { background: #e7f1ff; color: #1a62e7; }
+        .btn-action-edit:hover { background: #1a62e7; color: #ffffff; }
+        .btn-action-delete { background: #ffe3e3; color: #e03131; }
+        .btn-action-delete:hover { background: #fa5252; color: #ffffff; }
+
+        /* 상태 뱃지 */
+        .status-pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.15s ease;
+        }
+        .status-pill:hover { opacity: 0.8; transform: translateY(-1px); }
+        .status-waiting  { background: #fff3bf; color: #997404; }
+        .status-progress { background: #d0ebff; color: #1864ab; }
+        .status-done      { background: #d3f9d8; color: #2b8a3e; }
+
+        /* 수정 폼 */
+        .detail-item-editing { border-left-color: #5c36cc; }
+        .edit-actions { display: flex; gap: 8px; }
+        .btn-edit-save  { flex: 1; }
+        .btn-edit-cancel { flex: 1; background-color: #adb5bd !important; }
 
         /* 총계 배너 */
         .total-banner {
@@ -313,6 +350,8 @@
 <script>
     let sb = null;
     let allComplaintsCache = [];
+    let currentDetailRegion = null;
+    let currentEditingId = null;
 
     // ─── 초기화 ───────────────────────────────────────────────────────────────
     function startConnection() {
@@ -334,6 +373,21 @@
     function switchTab(index) {
         document.querySelectorAll('.tab-item').forEach((tab, i) => tab.classList.toggle('active', i === index));
         document.querySelectorAll('.content-panel').forEach((panel, i) => panel.classList.toggle('active', i === index));
+    }
+
+    // ─── 공용 유틸 ────────────────────────────────────────────────────────────
+    function escapeHtml(str) {
+        return (str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function statusClass(status) {
+        if (status === '진행중') return 'progress';
+        if (status === '해결') return 'done';
+        return 'waiting';
     }
 
     // ─── 민원 ─────────────────────────────────────────────────────────────────
@@ -390,10 +444,26 @@
 
         html += '</div>';
         summaryTarget.innerHTML = html;
+
+        // 상세 패널이 열려있는 상태로 데이터가 갱신된 경우 내용도 같이 갱신
+        if (currentDetailRegion) renderDetailBody();
     }
 
     // ─── 지역 상세 뷰 ─────────────────────────────────────────────────────────
     function openDetail(region) {
+        currentDetailRegion = region;
+        currentEditingId = null;
+        renderDetailBody();
+
+        const overlay = document.getElementById('detailOverlay');
+        overlay.classList.add('open');
+        setTimeout(() => {
+            document.getElementById('detailPanel').style.transform = 'translateY(0)';
+        }, 10);
+    }
+
+    function renderDetailBody() {
+        const region = currentDetailRegion;
         const items = allComplaintsCache.filter(c => c.region === region);
 
         document.getElementById('detailPanelTitle').innerHTML = `📌 ${region} 민원 <span style="font-size:14px; color:#6b7280; font-weight:500;">${items.length}건</span>`;
@@ -403,30 +473,94 @@
             bodyHtml = '<div class="detail-empty">민원 내용이 없습니다.</div>';
         } else {
             items.forEach(item => {
-                const replyHtml = item.reply
-                    ? `<div class="detail-item-reply">💬 해결 방안: ${item.reply}</div>`
-                    : '';
-                bodyHtml += `<div class="detail-item">
-                    <button class="btn-delete-item" onclick="deleteComplaint(${item.id})">삭제</button>
-                    <div class="detail-item-title">📌 ${item.title}</div>
-                    <div class="detail-item-content">📝 ${item.content}</div>
-                    ${replyHtml}
-                </div>`;
+                bodyHtml += (item.id === currentEditingId) ? renderEditForm(item) : renderItemView(item);
             });
         }
 
         document.getElementById('detailPanelBody').innerHTML = bodyHtml;
+    }
 
-        const overlay = document.getElementById('detailOverlay');
-        overlay.classList.add('open');
-        // 애니메이션을 위해 약간 지연
-        setTimeout(() => {
-            document.getElementById('detailPanel').style.transform = 'translateY(0)';
-        }, 10);
+    function renderItemView(item) {
+        const status = item.status || '문의중';
+        const replyHtml = item.reply
+            ? `<div class="detail-item-reply">💬 해결 방안: ${escapeHtml(item.reply)}</div>`
+            : '';
+        return `<div class="detail-item">
+            <div class="detail-item-top">
+                <div class="detail-item-title">📌 ${escapeHtml(item.title)}</div>
+                <div class="detail-actions">
+                    <button class="btn-action btn-action-edit" onclick="startEdit(${item.id})">수정</button>
+                    <button class="btn-action btn-action-delete" onclick="deleteComplaint(${item.id})">삭제</button>
+                </div>
+            </div>
+            <button class="status-pill status-${statusClass(status)}" onclick="cycleStatus(${item.id}, '${status}')">${status} ›</button>
+            <div class="detail-item-content">📝 ${escapeHtml(item.content)}</div>
+            ${replyHtml}
+        </div>`;
+    }
+
+    function renderEditForm(item) {
+        return `<div class="detail-item detail-item-editing">
+            <div class="detail-item-top">
+                <div class="detail-item-title">✏️ 민원 수정</div>
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-input" id="edit-title-${item.id}" value="${escapeHtml(item.title)}" placeholder="건의 제목">
+                <textarea class="form-textarea" id="edit-content-${item.id}" placeholder="내용">${escapeHtml(item.content)}</textarea>
+                <textarea class="form-textarea" id="edit-reply-${item.id}" placeholder="해결 방안">${escapeHtml(item.reply || '')}</textarea>
+                <div class="edit-actions">
+                    <button class="btn-submit btn-edit-save" onclick="saveEdit(${item.id})">저장</button>
+                    <button class="btn-submit btn-edit-cancel" onclick="cancelEdit()">취소</button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function startEdit(id) {
+        currentEditingId = id;
+        renderDetailBody();
+    }
+
+    function cancelEdit() {
+        currentEditingId = null;
+        renderDetailBody();
+    }
+
+    async function saveEdit(id) {
+        const title   = document.getElementById(`edit-title-${id}`).value.trim();
+        const content = document.getElementById(`edit-content-${id}`).value.trim();
+        const reply   = document.getElementById(`edit-reply-${id}`).value.trim();
+
+        if (!title || !content) return alert('제목과 내용을 입력하세요.');
+
+        const { error } = await sb.from('complaints').update({ title, content, reply }).eq('id', id);
+        if (error) return alert('수정 실패: ' + error.message);
+
+        const target = allComplaintsCache.find(c => c.id === id);
+        if (target) { target.title = title; target.content = content; target.reply = reply; }
+
+        currentEditingId = null;
+        renderDetailBody();
+    }
+
+    async function cycleStatus(id, currentStatus) {
+        const order = ['문의중', '진행중', '해결'];
+        let idx = order.indexOf(currentStatus);
+        if (idx === -1) idx = 0;
+        const nextStatus = order[(idx + 1) % order.length];
+
+        const { error } = await sb.from('complaints').update({ status: nextStatus }).eq('id', id);
+        if (error) return alert('상태 변경 실패: ' + error.message);
+
+        const target = allComplaintsCache.find(c => c.id === id);
+        if (target) target.status = nextStatus;
+
+        renderDetailBody();
     }
 
     function closeDetail() {
         document.getElementById('detailOverlay').classList.remove('open');
+        currentEditingId = null;
     }
 
     function closeDetailOverlay(e) {
@@ -439,7 +573,7 @@
         const content = document.getElementById('complaint-content').value;
         const reply   = document.getElementById('complaint-reply').value;
         if (!title || !content) return alert('내용을 입력하세요.');
-        const { error } = await sb.from('complaints').insert([{ id: Date.now(), region, title, content, reply }]);
+        const { error } = await sb.from('complaints').insert([{ id: Date.now(), region, title, content, reply, status: '문의중' }]);
         if (error) return alert('등록 실패: ' + error.message);
         alert('등록 완료');
         document.getElementById('complaint-title').value   = '';
